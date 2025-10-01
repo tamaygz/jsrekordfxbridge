@@ -109,11 +109,9 @@ export class HueLightController extends LightController {
       throw new Error('Hue controller not connected');
     }
 
-    if (this.streaming && this.streamingClient) {
-      await this.sendStreamingCommands(commands);
-    } else {
-      await this.sendRestCommands(commands);
-    }
+    // For now, always use REST API since DTLS streaming is not fully implemented
+    // The Entertainment group can still be enabled for faster response times
+    await this.sendRestCommands(commands);
   }
 
   async setLight(lightId: LightId, color: Color, intensity?: Intensity): Promise<void> {
@@ -234,9 +232,13 @@ export class HueLightController extends LightController {
       }
 
       console.log('🌉 Hue: Entertainment streaming enabled successfully!');
-      this.streaming = true;
       
-      console.log('🌉 Hue: Entertainment streaming started successfully');
+      // For now, we'll use REST API mode since full DTLS streaming requires additional setup
+      // The Entertainment group is enabled for streaming but we'll send commands via REST
+      this.streaming = false; // Set to false to use REST mode for now
+      this.streamingClient = null;
+      
+      console.log('🌉 Hue: Entertainment group enabled, using REST API for commands');
       
     } catch (error) {
       console.warn('🌉 Hue: Failed to start entertainment streaming, falling back to REST:', error);
@@ -249,13 +251,17 @@ export class HueLightController extends LightController {
     if (!this.streamingClient) return;
 
     try {
-      const frame = commands.map(command => ({
-        lightId: this.parseIntId(command.lightId),
-        r: Math.round(command.state.color.r),
-        g: Math.round(command.state.color.g),
-        b: Math.round(command.state.color.b),
-        brightness: Math.round(command.state.intensity.value * 254)
-      }));
+      const frame = commands.map(command => {
+        // Convert 0-1 intensity to 0-255 brightness for streaming (0 means off)
+        const brightness = Math.round(command.state.intensity.value * 255);
+        return {
+          lightId: this.parseIntId(command.lightId),
+          r: Math.round(command.state.color.r),
+          g: Math.round(command.state.color.g),
+          b: Math.round(command.state.color.b),
+          brightness
+        };
+      });
 
       this.streamingClient.setLights(frame);
       
@@ -274,14 +280,23 @@ export class HueLightController extends LightController {
           hueApi = await import('node-hue-api');
         }
         
-        const lightState = new hueApi.v3.lightStates.LightState()
-          .on()
-          .rgb(
-            Math.round(command.state.color.r),
-            Math.round(command.state.color.g),
-            Math.round(command.state.color.b)
-          )
-          .brightness(Math.round(command.state.intensity.value * 254));
+        const lightState = new hueApi.v3.lightStates.LightState();
+        
+        if (command.state.intensity.value === 0) {
+          // Turn light off for zero intensity
+          lightState.off();
+        } else {
+          // Convert 0-1 intensity to 1-254 brightness range (1 is minimum visible brightness)
+          const brightness = Math.max(1, Math.round(command.state.intensity.value * 254));
+          lightState
+            .on()
+            .rgb(
+              Math.round(command.state.color.r),
+              Math.round(command.state.color.g),
+              Math.round(command.state.color.b)
+            )
+            .brightness(brightness);
+        }
 
         await this.api.lights.setLightState(lightId.toString(), lightState);
         

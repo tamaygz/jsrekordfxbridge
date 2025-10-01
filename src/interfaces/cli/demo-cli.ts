@@ -14,6 +14,7 @@ export class DemoInterface {
     this.commands = {
       'help': this.showHelp.bind(this),
       'h': this.showHelp.bind(this),
+      'status': () => bridge.showStatus(),
       'strobo': () => bridge.triggerEffect('strobo'),
       'sweep': () => bridge.triggerEffect('sweep'),
       'blackout': () => bridge.triggerEffect('blackout'),
