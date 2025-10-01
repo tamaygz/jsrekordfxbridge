@@ -1,5 +1,5 @@
 // Dynamic import to handle ES module compatibility issues with node-hue-api
-let v3: any;
+let hueApi: any;
 
 export interface DiscoveredBridge {
   id: string;
@@ -45,13 +45,12 @@ export class HueBridgeDiscovery {
     
     try {
       // Dynamically import node-hue-api to handle ES module issues
-      if (!v3) {
-        const hueApi = await import('node-hue-api');
-        v3 = hueApi.v3;
+      if (!hueApi) {
+        hueApi = await import('node-hue-api');
       }
       
-      // Use both N-UPnP and mDNS discovery methods
-      const searchResults = await v3.discovery.nupnpSearch();
+      // Use N-UPnP discovery (more reliable than mDNS in ES modules)
+      const searchResults = await hueApi.discovery.nupnpSearch();
       
       console.log(`📡 Found ${searchResults.length} bridge(s) via N-UPnP`);
       
@@ -118,12 +117,11 @@ export class HueBridgeDiscovery {
    */
   async testAuthentication(ipAddress: string, username: string): Promise<boolean> {
     try {
-      if (!v3) {
-        const hueApi = await import('node-hue-api');
-        v3 = hueApi.v3;
+      if (!hueApi) {
+        hueApi = await import('node-hue-api');
       }
       
-      const authenticatedApi = await v3.api.createLocal(ipAddress).connect(username);
+      const api = hueApi.api.createLocal(ipAddress).connect(username);
       await authenticatedApi.configuration.getAll();
       
       // Update bridge info

@@ -5,7 +5,7 @@
  * This script will guide you through the complete setup process
  */
 
-import { HueSetupCLI } from '../src/infrastructure/hue/hue-setup-cli.js';
+import { HueSetupCLI } from './src/infrastructure/hue/hue-setup-cli.js';
 
 async function main() {
   const args = process.argv.slice(2);
