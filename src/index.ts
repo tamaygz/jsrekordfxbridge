@@ -1,39 +1,31 @@
 import 'reflect-metadata';
 import { DIContainer } from './infrastructure/di/container.js';
-import type { BeatDetector } from './domain/midi/midi-controller.js';
-import type { EffectEngine } from './domain/effects/effect.js';
-import type { FileEffectRepository } from './infrastructure/persistence/file-effect-repository.js';
+import type { OrchestrationService, OrchestrationStatus } from './application/orchestration-service.js';
+import type { BeatDetectionService } from './domain/beat/beat-detection-service.js';
+import type { EffectEngineService } from './domain/effects/effect-engine-service.js';
 
 export class JSRekordFXBridge {
   private container: DIContainer;
+  private orchestrationService: OrchestrationService;
   private isRunning = false;
 
   constructor() {
     this.container = new DIContainer();
+    this.orchestrationService = this.container.getOrchestrationService();
   }
 
   async initialize(): Promise<void> {
-    console.log('🎛️  JSRekordFXBridge v2.0 - TypeScript Edition');
+    console.log('🎛️  JSRekordFXBridge v3.0 - TypeScript Edition');
     console.log('==============================================');
     
     const isDemoMode = process.env.DEMO_MODE === 'true' || 
-                      (!process.env.HUE_BRIDGE_ID && !process.env.DMX_DEVICE);
+                      (!process.env.HUE_BRIDGE_IP && !process.env.HUE_BRIDGE_ID);
     
     console.log(`Mode: ${isDemoMode ? '🎭 DEMO' : '🔧 HARDWARE'}`);
 
-    // Initialize all services
-    const lightController = this.container.getLightController();
-    const dmxController = this.container.getDMXController();
-    const midiController = this.container.getMIDIController();
-    
-    // Connect to devices
-    await lightController.connect();
-    await dmxController.connect();
-    await midiController.connect();
-
-    // Load effects
-    const effectRepository = this.container.getEffectRepository() as FileEffectRepository;
-    await effectRepository.loadFromDirectory();
+    // Load effects first
+    const effectEngineService = this.container.getEffectEngineService();
+    await effectEngineService.loadEffects();
 
     console.log('🚀 System initialized successfully!');
   }
@@ -43,20 +35,14 @@ export class JSRekordFXBridge {
 
     console.log('▶️  Starting JSRekordFXBridge...');
 
-    // Start beat detection
-    const beatDetector = this.container.getBeatDetector();
-    const effectEngine = this.container.getEffectEngine();
-
-    beatDetector.onBeat(async (beat) => {
-      await effectEngine.onBeat(beat);
-    });
-
-    beatDetector.start();
+    // Start the orchestration service (handles everything)
+    await this.orchestrationService.start();
     this.isRunning = true;
 
     console.log('✅ System is running!');
     
-    // Show demo instructions
+    // Show status and demo instructions
+    await this.showStatus();
     this.showDemoInstructions();
   }
 
@@ -65,76 +51,130 @@ export class JSRekordFXBridge {
 
     console.log('⏹️  Stopping JSRekordFXBridge...');
 
-    // Stop beat detection
-    const beatDetector = this.container.getBeatDetector();
-    beatDetector.stop();
-
-    // Disconnect devices
-    const lightController = this.container.getLightController();
-    const dmxController = this.container.getDMXController();
-    const midiController = this.container.getMIDIController();
-
-    await lightController.disconnect();
-    await dmxController.disconnect();
-    await midiController.disconnect();
-
+    // Stop the orchestration service
+    await this.orchestrationService.stop();
     this.isRunning = false;
+
     console.log('⏹️  System stopped');
   }
 
   // Public API for demo control
-  async triggerEffect(effectName: string, parameters?: Record<string, unknown>): Promise<void> {
+  async triggerEffect(effectName: string, intensity = 1.0): Promise<void> {
     try {
-      const effectEngine = this.container.getEffectEngine();
-      await effectEngine.triggerEffect({ value: effectName }, parameters);
-      console.log(`🎆 Triggered effect: ${effectName}`);
+      await this.orchestrationService.triggerEffect(effectName, intensity);
+      console.log(`🎆 Triggered effect: ${effectName} at ${Math.round(intensity * 100)}%`);
     } catch (error) {
       console.error(`❌ Failed to trigger effect ${effectName}:`, error);
     }
   }
 
+  async setMasterBrightness(brightness: number): Promise<void> {
+    try {
+      await this.orchestrationService.setMasterBrightness(brightness);
+      console.log(`💡 Master brightness set to ${Math.round(brightness * 100)}%`);
+    } catch (error) {
+      console.error(`❌ Failed to set brightness:`, error);
+    }
+  }
+
+  async blackout(): Promise<void> {
+    try {
+      await this.orchestrationService.blackout();
+      console.log('⚫ Blackout executed');
+    } catch (error) {
+      console.error('❌ Failed to execute blackout:', error);
+    }
+  }
+
+  async loadShow(showName: string): Promise<void> {
+    try {
+      await this.orchestrationService.loadShow(showName);
+      console.log(`🎪 Show "${showName}" loaded`);
+    } catch (error) {
+      console.error(`❌ Failed to load show ${showName}:`, error);
+    }
+  }
+
+  async startShow(): Promise<void> {
+    try {
+      await this.orchestrationService.startShow();
+      console.log('🎪 Show started');
+    } catch (error) {
+      console.error('❌ Failed to start show:', error);
+    }
+  }
+
+  async stopShow(): Promise<void> {
+    try {
+      await this.orchestrationService.stopShow();
+      console.log('� Show stopped');
+    } catch (error) {
+      console.error('❌ Failed to stop show:', error);
+    }
+  }
+
   setBPM(bpm: number): void {
-    const beatDetector = this.container.getBeatDetector() as any;
-    if (beatDetector.setBPM) {
-      beatDetector.setBPM(bpm);
-      console.log(`🥁 BPM set to ${bpm}`);
-    }
+    const beatDetectionService = this.container.getBeatDetectionService();
+    beatDetectionService.setBPM(bpm);
+    console.log(`🥁 BPM set to ${bpm}`);
   }
 
-  toggleBeat(): void {
-    const beatDetector = this.container.getBeatDetector() as any;
-    if (beatDetector.timer) {
-      beatDetector.stop();
-    } else {
-      beatDetector.start();
-    }
+  async getStatus(): Promise<OrchestrationStatus> {
+    return await this.orchestrationService.getStatus();
   }
 
-  beat(): void {
-    const beatDetector = this.container.getBeatDetector() as any;
-    if (beatDetector.triggerBeat) {
-      beatDetector.triggerBeat();
-    }
+  async showStatus(): Promise<void> {
+    const status = await this.getStatus();
+    
+    console.log('\n📊 System Status:');
+    console.log('================');
+    console.log(`• Running: ${status.running ? '✅' : '❌'}`);
+    console.log(`• Lights: ${status.connections.lights ? '✅' : '❌'}`);
+    console.log(`• DMX: ${status.connections.dmx ? '✅' : '❌'}`);
+    console.log(`• MIDI: ${status.connections.midi ? '✅' : '❌'}`);
+    console.log(`• BPM: ${status.currentBPM || 'Not detected'}`);
+    console.log(`• Master Brightness: ${Math.round(status.masterBrightness * 100)}%`);
+    console.log(`• Current Show: ${status.currentShow || 'None'}`);
+    console.log(`• Active Effects: ${status.activeEffects.length > 0 ? status.activeEffects.join(', ') : 'None'}`);
+  }
+
+  async listEffects(): Promise<void> {
+    const effectEngineService = this.container.getEffectEngineService();
+    const effects = await effectEngineService.getAvailableEffects();
+    
+    console.log('\n🎨 Available Effects:');
+    console.log('===================');
+    effects.forEach(effect => console.log(`• ${effect}`));
   }
 
   private showDemoInstructions(): void {
     console.log(`
 🎮 DEMO MODE - Available Commands:
 ================================
-• bridge.triggerEffect("strobo")    - Trigger strobe effect
-• bridge.triggerEffect("sweep")     - Trigger sweep effect
-• bridge.triggerEffect("blackout")  - Blackout all lights
-• bridge.setBPM(120)               - Set beat speed
-• bridge.toggleBeat()              - Start/stop auto beat
-• bridge.beat()                    - Manual beat trigger
+• await bridge.triggerEffect("strobo")     - Trigger strobe effect
+• await bridge.triggerEffect("sweep")      - Trigger sweep effect
+• await bridge.triggerEffect("blackout")   - Blackout all lights
+• await bridge.setMasterBrightness(0.5)    - Set 50% brightness
+• await bridge.blackout()                  - Execute blackout
+• bridge.setBPM(120)                       - Set beat speed
+• await bridge.showStatus()                - Show system status
+• await bridge.listEffects()               - List available effects
+• await bridge.loadShow("myshow")          - Load a show
+• await bridge.startShow()                 - Start loaded show
+• await bridge.stopShow()                  - Stop current show
 
-Example: bridge.triggerEffect("strobo")
+Example: await bridge.triggerEffect("strobo", 0.8)
 `);
   }
 
   // Getter for DI container (for advanced usage)
   getContainer(): DIContainer {
     return this.container;
+  }
+
+  // Getter for orchestration service (for advanced usage)
+  getOrchestrationService(): OrchestrationService {
+    return this.orchestrationService;
   }
 }
 

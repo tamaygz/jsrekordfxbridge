@@ -1,4 +1,6 @@
-import type { EffectId, Color, TimeRange, BeatPosition, Intensity } from '../types.js';
+import type { EffectId } from '../../types/domain/effects.js';
+import type { Color, Intensity } from '../../types/domain/lighting.js';
+import type { TimeRange, BeatPosition } from '../../types/domain/beats.js';
 import type { LightCommand } from '../lighting/light-controller.js';
 import type { DMXFrame } from '../dmx/dmx-controller.js';
 

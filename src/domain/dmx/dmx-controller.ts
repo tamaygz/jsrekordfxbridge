@@ -1,4 +1,5 @@
-import type { DeviceId, DomainEvent } from '../types.js';
+import type { DeviceId } from '../../types/domain/devices.js';
+import type { DomainEvent } from '../../types/domain/events.js';
 
 export interface DMXChannel {
   readonly channel: number; // 1-512

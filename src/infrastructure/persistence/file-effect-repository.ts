@@ -8,7 +8,7 @@ import type {
   EffectMetadata,
   EffectStep
 } from '../../domain/effects/effect.js';
-import type { EffectId } from '../../domain/types.js';
+import type { EffectId } from '../../types/domain/effects.js';
 
 @injectable()
 export class FileEffectRepository implements EffectRepository {

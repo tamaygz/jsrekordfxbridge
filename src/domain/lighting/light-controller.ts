@@ -1,4 +1,6 @@
-import type { Color, Position, LightId, Intensity, TimeRange } from '../types.js';
+import type { Color, LightId, Intensity } from '../../types/domain/lighting.js';
+import type { Position } from '../../types/domain/devices.js';
+import type { TimeRange } from '../../types/domain/beats.js';
 
 export interface LightState {
   readonly color: Color;
@@ -40,6 +42,11 @@ export interface ILightController {
   connect(): Promise<void>;
   disconnect(): Promise<void>;
   isConnected(): boolean;
+  
+  // Convenience methods for common operations
+  setLight(lightId: LightId, color: Color, intensity?: Intensity): Promise<void>;
+  setAllLights(color: Color, intensity?: Intensity): Promise<void>;
+  setLightGroup(groupId: string, color: Color, intensity?: Intensity): Promise<void>;
 }
 
 export abstract class LightController implements ILightController {
@@ -48,4 +55,7 @@ export abstract class LightController implements ILightController {
   abstract connect(): Promise<void>;
   abstract disconnect(): Promise<void>;
   abstract isConnected(): boolean;
+  abstract setLight(lightId: LightId, color: Color, intensity?: Intensity): Promise<void>;
+  abstract setAllLights(color: Color, intensity?: Intensity): Promise<void>;
+  abstract setLightGroup(groupId: string, color: Color, intensity?: Intensity): Promise<void>;
 }

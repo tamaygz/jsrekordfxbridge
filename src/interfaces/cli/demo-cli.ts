@@ -1,6 +1,5 @@
 import * as readline from 'readline';
 import { bridge } from '../../index.js';
-import type { FileEffectRepository } from '../../infrastructure/persistence/file-effect-repository.js';
 
 export class DemoInterface {
   private rl: readline.Interface;
@@ -19,9 +18,7 @@ export class DemoInterface {
       'sweep': () => bridge.triggerEffect('sweep'),
       'blackout': () => bridge.triggerEffect('blackout'),
       'suspense': () => bridge.triggerEffect('red_suspense'),
-      'beat': () => bridge.beat(),
       'bpm': this.setBPM.bind(this),
-      'toggle': () => bridge.toggleBeat(),
       'list': this.listEffects.bind(this),
       'exit': this.exit.bind(this),
       'quit': this.exit.bind(this),
@@ -79,9 +76,7 @@ export class DemoInterface {
   list        - List all loaded effects
 
 🥁 Beat Control:
-  beat        - Manual beat trigger
   bpm [num]   - Set BPM (e.g., "bpm 140")
-  toggle      - Start/stop auto beat
 
 ℹ️  Help:
   help, h     - Show this help
@@ -91,7 +86,6 @@ export class DemoInterface {
 Examples:
   strobo
   bpm 140
-  beat
   list
 `);
   }
@@ -107,23 +101,7 @@ Examples:
 
   private async listEffects(): Promise<void> {
     try {
-      const effectRepository = bridge.getContainer().getEffectRepository() as FileEffectRepository;
-      const effects = await effectRepository.list();
-      
-      if (effects.length === 0) {
-        console.log('📋 No effects loaded');
-        return;
-      }
-
-      console.log('📋 Available Effects:');
-      console.log('==================');
-      for (const effect of effects) {
-        const tags = effect.tags.length > 0 ? ` [${effect.tags.join(', ')}]` : '';
-        console.log(`  • ${effect.name}${tags}`);
-        if (effect.description) {
-          console.log(`    ${effect.description}`);
-        }
-      }
+      await bridge.listEffects();
     } catch (error) {
       console.error('❌ Failed to list effects:', error);
     }

@@ -1,4 +1,5 @@
-import type { BeatPosition, BPM, DomainEvent } from '../types.js';
+import type { BeatPosition, BPM } from '../../types/domain/beats.js';
+import type { DomainEvent } from '../../types/domain/events.js';
 import type { Effect, EffectExecution } from '../effects/effect.js';
 
 export interface ShowCue {

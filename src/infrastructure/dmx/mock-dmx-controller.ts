@@ -6,7 +6,7 @@ import {
   type DMXCapabilities,
   type DMXChannel 
 } from '../../domain/dmx/dmx-controller.js';
-import type { DeviceId } from '../../domain/types.js';
+import type { DeviceId } from '../../types/domain/devices.js';
 
 @injectable()
 export class MockDMXController extends DMXController {

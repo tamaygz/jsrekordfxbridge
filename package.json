@@ -1,6 +1,6 @@
 {
     "name": "jsrekordbridge",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "DJ → Hue Entertainment + DMX lighting package with beat-sync and FX",
     "type": "module",
     "main": "dist/index.js",
@@ -23,10 +23,10 @@
         "node-hue-api": "^5.0.0-beta.16",
         "reflect-metadata": "^0.2.2",
         "tslib": "^2.8.1",
-        "yaml": "^2.2.0"
+        "yaml": "^2.8.1"
     },
     "devDependencies": {
-        "@types/node": "^20.0.0",
+        "@types/node": "^20.19.19",
         "@types/yaml": "^1.9.7",
         "@typescript-eslint/eslint-plugin": "^6.0.0",
         "@typescript-eslint/parser": "^6.0.0",

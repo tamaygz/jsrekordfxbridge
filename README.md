@@ -1,4 +1,4 @@
-# JSRekordFXBridge v2.0 - TypeScript Edition
+# JSRekordFXBridge v0.2
 
 # jsrekordbridge: Real-Time Lighting Control for DJs
 
@@ -330,6 +330,15 @@ DEMO_MODE=true
 ## 🧪 Testing
 
 ```bash
+# Build the project first
+npm run build
+
+# Run main DI container validation test
+node tests/test-di.js
+
+# Run comprehensive service tests
+node tests/test-all-services.js
+
 # Type checking
 npm run type-check
 
@@ -340,6 +349,18 @@ npm run lint
 npm run demo
 npm run demo-cli
 ```
+
+### Test Files
+
+All test files are located in the `tests/` directory:
+- `test-di.js` - Main dependency injection container validation
+- `test-all-services.js` - Comprehensive service resolution testing  
+- `validate-di-fixes.js` - @unmanaged() decorator validation
+- `test-direct.js` - Direct service instantiation tests
+- `test-manual.js` - Manual testing utilities
+- `test-minimal.js` - Minimal functionality tests
+
+See `tests/README.md` for detailed documentation of each test file.
 
 ## 🏗️ Extending the System
 

@@ -14,13 +14,9 @@ import type {
 import type { 
   IDMXController 
 } from '../../domain/dmx/dmx-controller.js';
-import type { 
-  EffectId, 
-  BeatPosition,
-  Color,
-  Intensity,
-  LightId
-} from '../../domain/types.js';
+import type { Color, LightId, Intensity } from '../../types/domain/lighting.js';
+import type { BeatPosition } from '../../types/domain/beats.js';
+import type { EffectId } from '../../types/domain/effects.js';
 
 export const TYPES = {
   LightController: Symbol.for('LightController'),

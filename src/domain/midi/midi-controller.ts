@@ -1,7 +1,11 @@
-import type { DeviceId, DomainEvent, BeatPosition, BPM } from '../types.js';
+import type { DeviceId } from '../../types/domain/devices.js';
+import type { DomainEvent } from '../../types/domain/events.js';
+import type { BeatPosition, BPM } from '../../types/domain/beats.js';
+
+export type MIDIMessageType = 'noteon' | 'noteoff' | 'cc' | 'clock' | 'start' | 'stop' | 'continue' | 'song_position';
 
 export interface MIDIMessage {
-  readonly type: 'noteon' | 'noteoff' | 'cc' | 'clock' | 'start' | 'stop';
+  readonly type: MIDIMessageType;
   readonly channel?: number;
   readonly data: number[];
   readonly timestamp: number;

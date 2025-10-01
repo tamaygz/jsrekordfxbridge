@@ -5,7 +5,8 @@ import {
   type MIDIMessage,
   type BeatDetector
 } from '../../domain/midi/midi-controller.js';
-import type { DeviceId, BeatPosition, BPM } from '../../domain/types.js';
+import type { DeviceId } from '../../types/domain/devices.js';
+import type { BeatPosition, BPM } from '../../types/domain/beats.js';
 
 @injectable()
 export class MockMIDIController extends MIDIController {
