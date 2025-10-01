@@ -36,20 +36,48 @@ export class HueSetupCLI {
     console.log('This will help you connect your Hue bridge and configure Entertainment groups.\n');
 
     try {
-      // Step 1: Bridge Discovery & Authentication
-      console.log('🔍 === STEP 1: Bridge Authentication ===\n');
+      // Check for existing credentials first
+      console.log('🔍 === CHECKING EXISTING SETUP ===\n');
+      const existingCreds = await this.checkExistingCredentials();
       
-      const authenticator = new HueBridgeAuthenticator();
-      const authResult = await authenticator.interactiveSetup();
-      
-      if (!authResult) {
-        return {
-          success: false,
-          error: 'Failed to authenticate with Hue bridge'
-        };
-      }
+      let bridgeInfo: any;
+      let credentials: any;
 
-      const { bridgeInfo, credentials } = authResult;
+      if (existingCreds) {
+        console.log('🔄 Continuing with existing credentials...\n');
+        
+        // Create bridge info from existing credentials
+        bridgeInfo = {
+          bridge: {
+            id: 'existing-' + existingCreds.bridgeIp.replace(/\./g, '-'),
+            name: 'Existing Hue Bridge',
+            ipAddress: existingCreds.bridgeIp,
+            modelId: 'Unknown',
+            softwareVersion: 'Unknown'
+          }
+        };
+        
+        credentials = {
+          username: existingCreds.username,
+          clientKey: existingCreds.clientKey
+        };
+      } else {
+        // Step 1: Bridge Discovery & Authentication
+        console.log('🔍 === STEP 1: Bridge Authentication ===\n');
+        
+        const authenticator = new HueBridgeAuthenticator();
+        const authResult = await authenticator.interactiveSetup();
+        
+        if (!authResult) {
+          return {
+            success: false,
+            error: 'Failed to authenticate with Hue bridge'
+          };
+        }
+
+        bridgeInfo = authResult.bridgeInfo;
+        credentials = authResult.credentials;
+      }
 
       // Step 2: Entertainment Group Setup
       console.log('\n🎭 === STEP 2: Entertainment Groups ===\n');
@@ -293,20 +321,48 @@ export class HueSetupCLI {
     console.log('This will help you authenticate and configure Entertainment groups.\n');
 
     try {
-      // Step 1: Manual Bridge Authentication
-      console.log('🔍 === STEP 1: Bridge Authentication ===\n');
+      // Check for existing credentials first
+      console.log('🔍 === CHECKING EXISTING SETUP ===\n');
+      const existingCreds = await this.checkExistingCredentials();
       
-      const authenticator = new HueBridgeAuthenticator();
-      const authResult = await authenticator.manualSetup(ipAddress);
-      
-      if (!authResult) {
-        return {
-          success: false,
-          error: 'Failed to authenticate with Hue bridge'
-        };
-      }
+      let bridgeInfo: any;
+      let credentials: any;
 
-      const { bridgeInfo, credentials } = authResult;
+      if (existingCreds && existingCreds.bridgeIp === ipAddress) {
+        console.log('🔄 Continuing with existing credentials for this bridge...\n');
+        
+        // Create bridge info from existing credentials
+        bridgeInfo = {
+          bridge: {
+            id: 'existing-' + existingCreds.bridgeIp.replace(/\./g, '-'),
+            name: 'Existing Hue Bridge',
+            ipAddress: existingCreds.bridgeIp,
+            modelId: 'Unknown',
+            softwareVersion: 'Unknown'
+          }
+        };
+        
+        credentials = {
+          username: existingCreds.username,
+          clientKey: existingCreds.clientKey
+        };
+      } else {
+        // Step 1: Manual Bridge Authentication
+        console.log('🔍 === STEP 1: Bridge Authentication ===\n');
+        
+        const authenticator = new HueBridgeAuthenticator();
+        const authResult = await authenticator.manualSetup(ipAddress);
+        
+        if (!authResult) {
+          return {
+            success: false,
+            error: 'Failed to authenticate with Hue bridge'
+          };
+        }
+
+        bridgeInfo = authResult.bridgeInfo;
+        credentials = authResult.credentials;
+      }
 
       // Step 2: Entertainment Group Setup
       console.log('\n🎭 === STEP 2: Entertainment Groups ===\n');
@@ -369,6 +425,54 @@ export class HueSetupCLI {
         success: false,
         error: error?.message || 'Unknown setup error'
       };
+    }
+  }
+
+  /**
+   * Check for existing credentials and return them if valid
+   */
+  private async checkExistingCredentials(): Promise<{
+    bridgeIp: string;
+    username: string;
+    clientKey?: string;
+  } | null> {
+    try {
+      if (!fs.existsSync(this.envPath)) {
+        return null;
+      }
+
+      const envContent = fs.readFileSync(this.envPath, 'utf8');
+      const envVars = this.parseEnvFile(envContent);
+
+      const bridgeIp = envVars.HUE_BRIDGE_IP;
+      const username = envVars.HUE_USERNAME;
+      const clientKey = envVars.HUE_CLIENT_KEY;
+
+      if (!bridgeIp || !username) {
+        return null;
+      }
+
+      // Test if credentials work
+      const authenticator = new HueBridgeAuthenticator();
+      const isValid = await authenticator.testExistingCredentials(bridgeIp, username);
+
+      if (isValid) {
+        console.log('✅ Found existing valid credentials');
+        console.log(`   • Bridge IP: ${bridgeIp}`);
+        console.log(`   • Username: ${username}`);
+        console.log(`   • Client Key: ${clientKey ? 'Yes ✅' : 'No ❌'}`);
+        const result: { bridgeIp: string; username: string; clientKey?: string } = { bridgeIp, username };
+        if (clientKey) {
+          result.clientKey = clientKey;
+        }
+        return result;
+      } else {
+        console.log('⚠️  Found existing credentials but they are invalid');
+        return null;
+      }
+    } catch (error) {
+      console.log('ℹ️  No valid existing credentials found');
+      return null;
     }
   }
 

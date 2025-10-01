@@ -96,20 +96,45 @@ export class HueEntertainmentSetup {
   async getEntertainmentGroups(): Promise<EntertainmentGroup[]> {
     try {
       const api = await this.getApi();
+      console.log('🔍 Fetching all groups from bridge...');
+      
       const groups = await api.groups.getAll();
+      console.log(`📊 Found ${groups.length} total groups`);
+      
+      // Filter and debug Entertainment groups
+      const entertainmentGroups = groups.filter((group: any) => {
+        console.log(`🔍 Group: ${group.name} (ID: ${group.id}) - Type: ${group.type} - Class: ${group.class}`);
+        return group.type === 'Entertainment';
+      });
+      
+      console.log(`🎭 Found ${entertainmentGroups.length} Entertainment groups`);
 
-      return groups
-        .filter((group: any) => group.type === 'Entertainment')
-        .map((group: any) => ({
-          id: group.id.toString(),
-          name: group.name,
-          type: group.type,
-          lights: group.lights.map((id: any) => id.toString()),
-          locations: group.locations,
-          stream: group.stream
-        }));
+      return entertainmentGroups.map((group: any) => ({
+        id: group.id.toString(),
+        name: group.name,
+        type: group.type,
+        lights: group.lights ? group.lights.map((id: any) => id.toString()) : [],
+        locations: group.locations || {},
+        stream: group.stream || {}
+      }));
     } catch (error: any) {
       console.error('❌ Failed to get entertainment groups:', error?.message || error);
+      
+      // Try alternative approach - get groups without filtering first
+      try {
+        console.log('🔄 Trying alternative approach...');
+        const api = await this.getApi();
+        const allGroups = await api.groups.getAll();
+        
+        console.log('📋 All groups raw data:');
+        allGroups.forEach((group: any, index: number) => {
+          console.log(`  ${index + 1}. ${group.name} - Type: ${group.type}, Class: ${group.class || 'undefined'}`);
+        });
+        
+      } catch (debugError: any) {
+        console.error('❌ Debug attempt also failed:', debugError?.message || debugError);
+      }
+      
       throw error;
     }
   }

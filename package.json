@@ -15,6 +15,7 @@
         "setup-hue": "tsx scripts/setup-hue.js",
         "generate-env": "node scripts/generate-env.js",
         "cleanup-env": "node scripts/cleanup-env.js",
+        "check-entertainment": "tsx scripts/check-entertainment.js",
         "clean": "rm -rf dist",
         "lint": "eslint src --ext .ts",
         "type-check": "tsc --noEmit"

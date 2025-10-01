@@ -89,6 +89,7 @@ function printHelp() {
   console.log('  npm run setup-hue validate       # Test existing configuration');  
   console.log('  npm run setup-hue help           # Show this help message');
   console.log('  npm run generate-env             # Create up-to-date .env file');
+  console.log('  npm run check-entertainment      # Check Entertainment groups status');
   console.log('');
   console.log('The setup process will:');
   console.log('  1. 🔍 Discover Hue bridges on your network');
