@@ -16,6 +16,9 @@
         "generate-env": "node scripts/generate-env.js",
         "cleanup-env": "node scripts/cleanup-env.js",
         "check-entertainment": "tsx scripts/check-entertainment.js",
+        "debug-groups": "tsx scripts/debug-groups.js",
+        "aggressive-debug": "tsx scripts/aggressive-debug.js",
+        "fix-entertainment-class": "tsx scripts/fix-entertainment-class.js",
         "clean": "rm -rf dist",
         "lint": "eslint src --ext .ts",
         "type-check": "tsc --noEmit"
