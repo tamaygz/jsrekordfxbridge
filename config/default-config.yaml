@@ -1,26 +1,26 @@
 # Example default configuration YAML
 midi:
-device_name: "DDJ-400"
-map:
-mode_toggle: "button_1"
-strobe: "pad_1"
-suspense: "pad_2"
-sweep: "pad_3"
-blackout: "pad_4"
+  device_name: "DDJ-400"
+  map:
+    mode_toggle: "button_1"
+    strobe: "pad_1"
+    suspense: "pad_2"
+    sweep: "pad_3"
+    blackout: "pad_4"
 rekordbox:
-use_midi_clock: true
-virtual_port: "rekordbox-out"
+  use_midi_clock: true
+  virtual_port: "rekordbox-out"
 beat_to_light:
-source: "midi_clock" # options: midi_clock | audio_aubio
-sensitivity: 0.8
-default_depth_map: "config/depth-map.json"
+  source: "midi_clock" # options: midi_clock | audio_aubio
+  sensitivity: 0.8
+  default_depth_map: "config/depth-map.yaml"
 hue:
-enabled: true
-bridge_id: "${HUE_BRIDGE_ID}"
-username: "${HUE_USERNAME}"
-entertainment_id: "${HUE_ENTERTAINMENT_ID}"
+  enabled: true
+  bridge_id: "${HUE_BRIDGE_ID}"
+  username: "${HUE_USERNAME}"
+  entertainment_id: "${HUE_ENTERTAINMENT_ID}"
 dmx:
-enabled: true
-device: "${DMX_DEVICE}"
+  enabled: true
+  device: "${DMX_DEVICE}"
 effects:
-directory: "effects"
+  directory: "effects"

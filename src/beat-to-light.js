@@ -40,7 +40,7 @@ async function main() {
 
   // 3. Connect to MIDI
   const midi = new MidiController(CONFIG.midiInput);
-  midi.connect();
+  await midi.connect();
 
   // 4. Connect to Rekordbox
   const rekordbox = new Rekordbox(midi);

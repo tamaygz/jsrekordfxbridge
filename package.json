@@ -4,14 +4,14 @@
     "description": "DJ → Hue Entertainment + DMX lighting package with beat-sync and FX",
     "main": "src/index.js",
     "scripts": {
-        "start": "node src/index.js"
+        "start": "node src/index.js",
+        "demo": "DEMO_MODE=true node src/index.js"
     },
     "dependencies": {
-        "easymidi": "^3.0.0",
-        "yaml": "^2.2.0",
-        "node-dmx": "^1.6.0",
-        "node-hue-api": "^4.0.0",
-        "aubiojs": "^1.0.0",
-        "dotenv": "^16.0.0"
+        "dmx": "^0.25.1",
+        "dotenv": "^16.0.0",
+        "jzz": "^1.9.6",
+        "node-hue-api": "^5.0.0-beta.16",
+        "yaml": "^2.2.0"
     }
 }

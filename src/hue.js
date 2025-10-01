@@ -15,7 +15,9 @@ class HueEntertainment extends EventEmitter {
   }
 
   async connect() {
-    if (!this.bridgeId || !this.username) throw new Error('Hue bridge id and username required');
+    if (!this.bridgeId || !this.username) {
+      throw new Error('Hue bridge id and username required. Set HUE_BRIDGE_ID and HUE_USERNAME environment variables or run in demo mode.');
+    }
 
     this.api = await v3.api.createLocal(this.bridgeId).connect(this.username);
     console.log('Connected to Hue bridge', this.bridgeId);
