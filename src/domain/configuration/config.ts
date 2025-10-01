@@ -3,6 +3,7 @@ export interface SystemConfiguration {
   readonly lighting: LightingConfiguration;
   readonly dmx: DMXConfiguration;
   readonly midi: MIDIConfiguration;
+  readonly rekordbox?: RekordboxConfiguration;
   readonly effects: EffectsConfiguration;
   readonly shows: ShowsConfiguration;
   readonly demo: DemoConfiguration;
@@ -70,6 +71,13 @@ export interface MIDIMapping {
   readonly channel: number;
   readonly value: number;
   readonly action: string;
+}
+
+export interface RekordboxConfiguration {
+  readonly enabled?: boolean;
+  readonly useMidiClock?: boolean;
+  readonly virtualPort?: string;
+  readonly autoDetectChannels?: boolean;
 }
 
 export interface BeatConfiguration {

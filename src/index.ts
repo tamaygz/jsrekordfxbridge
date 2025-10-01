@@ -134,7 +134,14 @@ export class JSRekordFXBridge {
     console.log(`• Lights: ${status.connections.lights ? '✅' : '❌'}`);
     console.log(`• DMX: ${status.connections.dmx ? '✅' : '❌'}`);
     console.log(`• MIDI: ${status.connections.midi ? '✅' : '❌'}`);
-    console.log(`• BPM: ${status.currentBPM || 'Not detected'}`);
+    console.log(`• Rekordbox: ${status.connections.rekordbox ? '✅' : '❌'}`);
+    console.log(`• BPM (Beat Detection): ${status.currentBPM || 'Not detected'}`);
+    
+    if (status.connections.rekordbox) {
+      console.log(`• Rekordbox BPM: ${status.rekordboxBPM?.toFixed(1) || 'Not detected'}`);
+      console.log(`• Active Channel: ${status.activeChannel || 'None'}`);
+    }
+    
     console.log(`• Master Brightness: ${Math.round(status.masterBrightness * 100)}%`);
     console.log(`• Current Show: ${status.currentShow || 'None'}`);
     console.log(`• Active Effects: ${status.activeEffects.length > 0 ? status.activeEffects.join(', ') : 'None'}`);

@@ -5,6 +5,7 @@ export const TYPES = {
   LightController: 'LightController',
   DMXController: 'DMXController',
   MIDIController: 'MIDIController',
+  RekordboxController: 'RekordboxController',
   
   // Services
   BeatDetectionService: 'BeatDetectionService',
