@@ -46,7 +46,8 @@ export class HueBridgeDiscovery {
     try {
       // Dynamically import node-hue-api to handle ES module issues
       if (!hueApi) {
-        hueApi = await import('node-hue-api');
+        const nodeHueApi = await import('node-hue-api');
+        hueApi = nodeHueApi.v3;
       }
       
       // Use N-UPnP discovery (more reliable than mDNS in ES modules)
@@ -61,7 +62,7 @@ export class HueBridgeDiscovery {
         
         try {
           // Get detailed bridge information
-          const unauthenticatedApi = v3.api.createLocal(bridge.ipaddress);
+          const unauthenticatedApi = hueApi.api.createLocal(bridge.ipaddress);
           const config = await unauthenticatedApi.configuration.getAll();
           
           const bridgeInfo: HueBridgeInfo = {

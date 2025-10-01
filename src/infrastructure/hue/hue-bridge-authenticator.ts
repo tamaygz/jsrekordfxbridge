@@ -33,12 +33,15 @@ export class HueBridgeAuthenticator {
   ): Promise<AuthenticationResult> {
     try {
       if (!hueApi) {
-        hueApi = await import('node-hue-api');
+        const nodeHueApi = await import('node-hue-api');
+        hueApi = nodeHueApi.v3;
       }
       
       console.log(`🔐 Attempting to authenticate with bridge at ${ipAddress}...`);
       
-      const unauthenticatedApi = hueApi.api.createLocal(ipAddress);      // Create user request
+      const unauthenticatedApi = hueApi.api.createLocal(ipAddress);
+      
+      // Create user request
       const userRequest = {
         devicetype: `${request.appName}#${request.deviceName}`,
         ...(request.generateClientKey && { generateclientkey: true })
