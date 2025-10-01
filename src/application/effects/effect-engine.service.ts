@@ -17,12 +17,7 @@ import type {
 import type { Color, LightId, Intensity } from '../../types/domain/lighting.js';
 import type { BeatPosition } from '../../types/domain/beats.js';
 import type { EffectId } from '../../types/domain/effects.js';
-
-export const TYPES = {
-  LightController: Symbol.for('LightController'),
-  DMXController: Symbol.for('DMXController'),
-  EffectRepository: Symbol.for('EffectRepository')
-};
+import { TYPES } from '../../types/infrastructure/di-container.js';
 
 @injectable()
 export class EffectEngineService implements EffectEngine {

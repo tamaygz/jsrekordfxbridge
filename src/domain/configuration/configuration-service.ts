@@ -1,47 +1,34 @@
+// Import and re-export consolidated configuration interfaces from config.ts
+import type { 
+  HueConfiguration,
+  DMXConfiguration,
+  MIDIConfiguration,
+  EffectsConfiguration
+} from './config.js';
+
+// Re-export for convenience
+export type { 
+  HueConfiguration,
+  DMXConfiguration,
+  MIDIConfiguration,
+  EffectsConfiguration as EffectConfiguration
+} from './config.js';
+
+// Simple Configuration interface that matches FileConfigurationService usage
 export interface Configuration {
   readonly hue: HueConfiguration;
   readonly dmx: DMXConfiguration;
   readonly midi: MIDIConfiguration;
   readonly beat: BeatConfiguration;
-  readonly effects: EffectConfiguration;
+  readonly effects: EffectsConfiguration;
 }
 
-export interface HueConfiguration {
-  readonly bridgeIp: string;
-  readonly userId: string;
-  readonly clientKey: string;
-  readonly entertainmentGroup: string;
-  readonly useStreamingApi: boolean;
-  readonly maxBrightness: number;
-  readonly transitionTime: number;
-}
-
-export interface DMXConfiguration {
-  readonly driver: string;
-  readonly device: string;
-  readonly universe: number;
-  readonly channels: number;
-}
-
-export interface MIDIConfiguration {
-  readonly inputDevice: string;
-  readonly outputDevice: string;
-  readonly controllerType: string;
-  readonly mappings: Record<string, string>;
-}
-
+// Add specific interfaces needed by FileConfigurationService
 export interface BeatConfiguration {
   readonly threshold: number;
   readonly windowSize: number;
   readonly minInterval: number;
   readonly decay: number;
-}
-
-export interface EffectConfiguration {
-  readonly directory: string;
-  readonly preload: boolean;
-  readonly enableCache: boolean;
-  readonly reloadOnChange: boolean;
 }
 
 export interface ConfigurationService {

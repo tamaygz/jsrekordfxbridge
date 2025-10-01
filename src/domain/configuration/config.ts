@@ -16,10 +16,18 @@ export interface LightingConfiguration {
 }
 
 export interface HueConfiguration {
-  readonly bridgeId: string;
-  readonly username: string;
+  readonly bridgeId?: string;
+  readonly username?: string;
   readonly entertainmentGroupId?: string;
-  readonly discoveryTimeout: number;
+  readonly discoveryTimeout?: number;
+  // Extended properties for FileConfigurationService compatibility
+  readonly bridgeIp?: string;
+  readonly userId?: string;
+  readonly clientKey?: string;
+  readonly entertainmentGroup?: string;
+  readonly useStreamingApi?: boolean;
+  readonly maxBrightness?: number;
+  readonly transitionTime?: number;
 }
 
 export interface LightZone {
@@ -29,11 +37,14 @@ export interface LightZone {
 }
 
 export interface DMXConfiguration {
-  readonly enabled: boolean;
-  readonly provider: 'enttec' | 'artnet' | 'mock';
+  readonly enabled?: boolean;
+  readonly provider?: 'enttec' | 'artnet' | 'mock';
   readonly device?: string;
-  readonly universe: number;
-  readonly fixtures: Record<string, DMXFixture>;
+  readonly universe?: number;
+  readonly fixtures?: Record<string, DMXFixture>;
+  // Extended properties for FileConfigurationService compatibility
+  readonly driver?: string;
+  readonly channels?: number;
 }
 
 export interface DMXFixture {
@@ -44,11 +55,14 @@ export interface DMXFixture {
 }
 
 export interface MIDIConfiguration {
-  readonly enabled: boolean;
+  readonly enabled?: boolean;
   readonly inputDevice?: string;
   readonly outputDevice?: string;
-  readonly clockSource: 'internal' | 'midi' | 'external';
-  readonly mapping: Record<string, MIDIMapping>;
+  readonly clockSource?: 'internal' | 'midi' | 'external';
+  readonly mapping?: Record<string, MIDIMapping>;
+  // Extended properties for FileConfigurationService compatibility
+  readonly controllerType?: string;
+  readonly mappings?: Record<string, string>;
 }
 
 export interface MIDIMapping {
@@ -59,9 +73,13 @@ export interface MIDIMapping {
 }
 
 export interface EffectsConfiguration {
-  readonly directory: string;
-  readonly autoload: boolean;
-  readonly defaultParameters: Record<string, unknown>;
+  readonly directory?: string;
+  readonly autoload?: boolean;
+  readonly defaultParameters?: Record<string, unknown>;
+  // Extended properties for FileConfigurationService compatibility
+  readonly preload?: boolean;
+  readonly enableCache?: boolean;
+  readonly reloadOnChange?: boolean;
 }
 
 export interface ShowsConfiguration {
