@@ -59,19 +59,3 @@ export interface EffectCommand {
   readonly lightCommands?: LightCommand[];
   readonly dmxFrames?: DMXFrame[];
 }
-
-export abstract class EffectEngine {
-  abstract loadEffect(definition: unknown): Promise<Effect>;
-  abstract triggerEffect(effectId: EffectId, parameters?: Record<string, unknown>): Promise<EffectExecution>;
-  abstract stopEffect(executionId: string): Promise<void>;
-  abstract getRunningEffects(): Promise<EffectExecution[]>;
-  abstract onBeat(beat: BeatPosition): Promise<void>;
-}
-
-export interface EffectRepository {
-  findById(id: EffectId): Promise<Effect | null>;
-  findByTag(tag: string): Promise<Effect[]>;
-  save(effect: Effect): Promise<void>;
-  delete(id: EffectId): Promise<void>;
-  list(): Promise<Effect[]>;
-}

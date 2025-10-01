@@ -3,7 +3,8 @@ import type { ILightController } from '../domain/lighting/light-controller.js';
 import type { DMXController } from '../domain/dmx/dmx-controller.js';
 import type { IMIDIController } from '../domain/midi/midi-controller.js';
 import type { BeatDetectionService } from '../domain/beat/beat-detection-service.js';
-import type { EffectEngineService } from '../domain/effects/effect-engine-service.js';
+import type { EffectEngine } from '../domain/effects/effect-engine.js';
+import type { EffectRepository } from '../domain/effects/effect-repository.js';
 import type { ConfigurationService } from '../domain/configuration/configuration-service.js';
 import type { ShowService } from '../domain/shows/show-service.js';
 import { TYPES } from '../types/infrastructure/di-container.js';
@@ -52,7 +53,8 @@ export class BeatToLightOrchestrationService implements OrchestrationService {
     @inject(TYPES.DMXController) private dmxController: DMXController,
     @inject(TYPES.MIDIController) private midiController: IMIDIController,
     @inject(TYPES.BeatDetectionService) private beatDetectionService: BeatDetectionService,
-    @inject(TYPES.EffectEngineService) private effectEngineService: EffectEngineService,
+    @inject(TYPES.EffectEngine) private effectEngine: EffectEngine,
+    @inject(TYPES.EffectRepository) private effectRepository: EffectRepository,
     @inject(TYPES.ConfigurationService) private configurationService: ConfigurationService,
     @inject(TYPES.ShowService) private showService: ShowService
   ) {}
@@ -114,7 +116,7 @@ export class BeatToLightOrchestrationService implements OrchestrationService {
     }
 
     try {
-      const effect = await this.effectEngineService.getEffect(effectName);
+      const effect = await this.effectRepository.getEffect(effectName);
       if (!effect) {
         console.warn(`🎵 Orchestration: Effect "${effectName}" not found`);
         return;
@@ -123,8 +125,8 @@ export class BeatToLightOrchestrationService implements OrchestrationService {
       // Apply master brightness
       const adjustedIntensity = intensity * this.masterBrightness;
 
-      // Execute effect through the effect engine
-      await this.effectEngineService.executeEffect(effect, adjustedIntensity);
+      // Execute effect through the effect engine - use the new application service method
+      await this.effectEngine.executeEffectWithIntensity(effect, adjustedIntensity);
       
       this.activeEffects.add(effectName);
       

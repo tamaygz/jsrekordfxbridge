@@ -8,7 +8,8 @@ export const TYPES = {
   
   // Services
   BeatDetectionService: 'BeatDetectionService',
-  EffectEngineService: 'EffectEngineService',
+  EffectEngine: 'EffectEngine',
+  EffectExecutor: 'EffectExecutor',
   ConfigurationService: 'ConfigurationService',
   ShowService: 'ShowService',
   OrchestrationService: 'OrchestrationService',

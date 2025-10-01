@@ -3,7 +3,7 @@ import 'dotenv/config';
 import { DIContainer } from './infrastructure/di/container.js';
 import type { OrchestrationService, OrchestrationStatus } from './application/orchestration-service.js';
 import type { BeatDetectionService } from './domain/beat/beat-detection-service.js';
-import type { EffectEngineService } from './domain/effects/effect-engine-service.js';
+import type { EffectRepository } from './domain/effects/effect-repository.js';
 
 export class JSRekordFXBridge {
   private container: DIContainer;
@@ -24,9 +24,10 @@ export class JSRekordFXBridge {
     
     console.log(`Mode: ${isDemoMode ? '🎭 DEMO' : '🔧 HARDWARE'}`);
 
-    // Load effects first
-    const effectEngineService = this.container.getEffectEngineService();
-    await effectEngineService.loadEffects();
+    // Load effects first via repository
+    const effectRepository = this.container.getEffectRepository();
+    await effectRepository.loadEffects();
+    console.log('🎨 Effects: Effects loaded via repository');
 
     console.log('🚀 System initialized successfully!');
   }
@@ -139,13 +140,15 @@ export class JSRekordFXBridge {
     console.log(`• Active Effects: ${status.activeEffects.length > 0 ? status.activeEffects.join(', ') : 'None'}`);
   }
 
-  async listEffects(): Promise<void> {
-    const effectEngineService = this.container.getEffectEngineService();
-    const effects = await effectEngineService.getAvailableEffects();
+  async listEffects(): Promise<string[]> {
+    const effectRepository = this.container.getEffectRepository();
+    const effects = await effectRepository.getAvailableEffects();
     
     console.log('\n🎨 Available Effects:');
     console.log('===================');
     effects.forEach(effect => console.log(`• ${effect}`));
+    
+    return effects;
   }
 
   private showDemoInstructions(): void {

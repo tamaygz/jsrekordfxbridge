@@ -6,7 +6,8 @@ import type { ILightController } from '../../domain/lighting/light-controller.js
 import type { DMXController } from '../../domain/dmx/dmx-controller.js';
 import type { IMIDIController } from '../../domain/midi/midi-controller.js';
 import type { EffectRepository } from '../../domain/effects/effect-repository.js';
-import type { EffectEngineService } from '../../domain/effects/effect-engine-service.js';
+import type { EffectEngine } from '../../domain/effects/effect-engine.js';
+import type { EffectExecutor } from '../../domain/effects/effect-executor.js';
 import type { ConfigurationService } from '../../domain/configuration/configuration-service.js';
 import type { BeatDetectionService } from '../../domain/beat/beat-detection-service.js';
 import type { ShowService } from '../../domain/shows/show-service.js';
@@ -20,7 +21,8 @@ import { MockDMXController } from '../dmx/mock-dmx-controller.js';
 import { MockMIDIController } from '../midi/mock-midi-controller.js';
 import { JZZMIDIController } from '../midi/jzz-midi-controller.js';
 import { FileEffectRepository } from '../effects/file-effect-repository.js';
-import { EffectEngineServiceImpl } from '../effects/effect-engine-service-impl.js';
+import { EffectEngineService } from '../../application/effects/effect-engine.service.js';
+import { HardwareEffectExecutor } from '../effects/hardware-effect-executor.js';
 import { FileConfigurationService } from '../configuration/file-configuration-service.js';
 import { MIDIClockBeatDetectionService } from '../beat/midi-clock-beat-detection-service.js';
 import { FileShowService } from '../shows/file-show-service.js';
@@ -88,7 +90,8 @@ export class DIContainer {
     this.container.bind<EffectRepository>(TYPES.EffectRepository).to(FileEffectRepository).inSingletonScope();
     
     // Bind services
-    this.container.bind<EffectEngineService>(TYPES.EffectEngineService).to(EffectEngineServiceImpl).inSingletonScope();
+    this.container.bind<EffectEngine>(TYPES.EffectEngine).to(EffectEngineService).inSingletonScope();
+    this.container.bind<EffectExecutor>(TYPES.EffectExecutor).to(HardwareEffectExecutor).inSingletonScope();
     this.container.bind<ConfigurationService>(TYPES.ConfigurationService).to(FileConfigurationService).inSingletonScope();
     this.container.bind<ShowService>(TYPES.ShowService).to(FileShowService).inSingletonScope();
     
@@ -138,8 +141,8 @@ export class DIContainer {
     return this.get<BeatDetectionService>(TYPES.BeatDetectionService);
   }
 
-  getEffectEngineService(): EffectEngineService {
-    return this.get<EffectEngineService>(TYPES.EffectEngineService);
+  getEffectEngine(): EffectEngine {
+    return this.get<EffectEngine>(TYPES.EffectEngine);
   }
 
   getConfigurationService(): ConfigurationService {
