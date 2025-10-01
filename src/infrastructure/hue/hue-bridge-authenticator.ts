@@ -39,7 +39,7 @@ export class HueBridgeAuthenticator {
       
       console.log(`🔐 Attempting to authenticate with bridge at ${ipAddress}...`);
       
-      const unauthenticatedApi = await hueApi.api.createLocal(ipAddress).connect();
+      const unauthenticatedApi = await hueApi.v3.api.createLocal(ipAddress).connect();
       
       const createdUser = await unauthenticatedApi.users.createUser(
         request.appName,

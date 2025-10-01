@@ -2,6 +2,7 @@
     "name": "jsrekordbridge",
     "version": "3.0.0",
     "description": "DJ lighting control system",
+    "author": "Tamay Gündüz (https://github.com/tamaygz)",
     "type": "module",
     "main": "dist/index.js",
     "scripts": {

@@ -59,7 +59,7 @@ export class HueEntertainmentSetup {
       hueApi = hueApiModule.v3;
     }
 
-    return hueApi.api.createLocal(this.ipAddress).connect(this.username);
+    return hueApi.v3.api.createLocal(this.ipAddress).connect(this.username);
   }
 
   /**

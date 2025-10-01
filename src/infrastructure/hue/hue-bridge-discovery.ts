@@ -62,7 +62,7 @@ export class HueBridgeDiscovery {
         
         try {
           // Get detailed bridge information using node-hue-api
-          const unauthenticatedApi = hueApi.api.createLocal(bridge.ipaddress);
+          const unauthenticatedApi = hueApi.v3.api.createLocal(bridge.ipaddress);
           
           // For now, create a basic config from the N-UPnP discovery result
           const config = {
@@ -129,7 +129,7 @@ export class HueBridgeDiscovery {
         hueApi = await import('node-hue-api');
       }
       
-      const authenticatedApi = await hueApi.api.createLocal(ipAddress).connect(username);
+      const authenticatedApi = await hueApi.v3.api.createLocal(ipAddress).connect(username);
       await authenticatedApi.configuration.getConfiguration();
       
       // Update bridge info
@@ -161,7 +161,7 @@ export class HueBridgeDiscovery {
         hueApi = await import('node-hue-api');
       }
       
-      const authenticatedApi = await hueApi.api.createLocal(ipAddress).connect(username);
+      const authenticatedApi = await hueApi.v3.api.createLocal(ipAddress).connect(username);
       
       // Get entertainment groups
         const groups = await authenticatedApi.groups.getAll();

@@ -56,7 +56,7 @@ export class HueLightController extends LightController {
       }
       
       // Connect to Hue Bridge
-      this.api = await hueApi.api.createLocal(this.config.bridgeIp).connect(this.config.username);
+      this.api = await hueApi.v3.api.createLocal(this.config.bridgeIp).connect(this.config.username);
       console.log('🌉 Hue: Connected to bridge successfully');
 
       // Discover and map lights
