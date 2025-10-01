@@ -7,7 +7,7 @@ import type {
   MIDIConfiguration,
   BeatConfiguration,
   EffectConfiguration
-} from '../../domain/configuration/configuration-service.js';
+} from '../../domain/configuration/configuration-service';
 import * as yaml from 'yaml';
 import * as fs from 'fs/promises';
 import * as path from 'path';
