@@ -254,6 +254,31 @@ MIDI_DEVICE_NAME=DDJ-400
 DEMO_MODE=true
 ```
 
+### Rekordbox Management Tools
+
+The project includes comprehensive management tools for rekordbox configuration and testing:
+
+```bash
+# Configuration and validation
+npm run rekordbox:config          # Show configuration guide
+npm run rekordbox:validate        # Validate rekordbox settings
+
+# Testing and debugging
+npm run rekordbox:test            # Test connection and channel detection
+npm run rekordbox:test-bpm        # Test BPM tracking and synchronization
+npm run rekordbox:debug           # Debug connection issues
+npm run rekordbox:list-devices    # List available MIDI devices
+
+# Show all commands
+npm run rekordbox                 # Display help
+```
+
+**Quick Start:**
+1. Run `npm run rekordbox:config` for setup instructions
+2. Configure rekordbox MIDI output in preferences
+3. Run `npm run rekordbox:validate` to check configuration
+4. Run `npm run rekordbox:test` to test connection
+
 ## 🚀 Getting Started
 
 ### Example `default-config.yaml`
