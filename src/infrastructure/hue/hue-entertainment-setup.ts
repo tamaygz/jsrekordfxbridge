@@ -1,7 +1,7 @@
 import type { HueBridgeInfo } from './hue-bridge-discovery.js';
 
 // Dynamic import to handle ES module compatibility issues with node-hue-api
-let v3: any;
+let hueApi: any;
 
 export interface HueLight {
   id: string;
@@ -54,12 +54,12 @@ export class HueEntertainmentSetup {
    * Get authenticated API instance
    */
   private async getApi() {
-    if (!v3) {
-      const hueApi = await import('node-hue-api');
-      v3 = hueApi.v3;
+    if (!hueApi) {
+      const hueApiModule = await import('node-hue-api');
+      hueApi = hueApiModule;
     }
 
-    return v3.api.createLocal(this.ipAddress).connect(this.username);
+    return hueApi.api.createLocal(this.ipAddress).connect(this.username);
   }
 
   /**

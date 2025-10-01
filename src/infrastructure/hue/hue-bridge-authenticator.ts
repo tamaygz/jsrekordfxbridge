@@ -1,7 +1,7 @@
 import { HueBridgeDiscovery, type HueBridgeInfo } from './hue-bridge-discovery.js';
 
 // Dynamic import to handle ES module compatibility issues with node-hue-api
-let v3: any;
+let hueApi: any;
 
 export interface AuthenticationResult {
   success: boolean;
@@ -32,16 +32,13 @@ export class HueBridgeAuthenticator {
     request: AuthenticationRequest
   ): Promise<AuthenticationResult> {
     try {
-      if (!v3) {
-        const hueApi = await import('node-hue-api');
-        v3 = hueApi.v3;
+      if (!hueApi) {
+        hueApi = await import('node-hue-api');
       }
-
+      
       console.log(`🔐 Attempting to authenticate with bridge at ${ipAddress}...`);
       
-      const unauthenticatedApi = v3.api.createLocal(ipAddress);
-      
-      // Create user request
+      const unauthenticatedApi = hueApi.api.createLocal(ipAddress);      // Create user request
       const userRequest = {
         devicetype: `${request.appName}#${request.deviceName}`,
         ...(request.generateClientKey && { generateclientkey: true })

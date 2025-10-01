@@ -121,7 +121,7 @@ export class HueBridgeDiscovery {
         hueApi = await import('node-hue-api');
       }
       
-      const api = hueApi.api.createLocal(ipAddress).connect(username);
+      const authenticatedApi = await hueApi.api.createLocal(ipAddress).connect(username);
       await authenticatedApi.configuration.getAll();
       
       // Update bridge info
@@ -149,14 +149,13 @@ export class HueBridgeDiscovery {
 
     if (username) {
       try {
-        if (!v3) {
-          const hueApi = await import('node-hue-api');
-          v3 = hueApi.v3;
-        }
-        
-        const authenticatedApi = await v3.api.createLocal(ipAddress).connect(username);
-        
-        // Get entertainment groups
+      if (!hueApi) {
+        hueApi = await import('node-hue-api');
+      }
+      
+      const authenticatedApi = await hueApi.api.createLocal(ipAddress).connect(username);
+      
+      // Get entertainment groups
         const groups = await authenticatedApi.groups.getAll();
         const entertainmentGroups = groups.filter((group: any) => group.type === 'Entertainment');
         
