@@ -1,0 +1,9 @@
+bass:
+  zone: floor
+  coords: [0, -1, 0]
+mids:
+  zone: mid
+  coords: [0, 0, 1]
+highs:
+  zone: ceiling
+  coords: [0, 1, 2]

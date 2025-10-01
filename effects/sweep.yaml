@@ -1,0 +1,12 @@
+# Example sweep effect YAML
+name: sweep
+type: spatial
+params:
+  path: left_to_right
+  color: [0,128,255]
+pattern:
+  - action: sweep
+    params:
+      from: left
+      to: right
+      ms: 1500

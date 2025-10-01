@@ -1,0 +1,17 @@
+{
+    "name": "jsrekordbridge",
+    "version": "0.1.0",
+    "description": "DJ → Hue Entertainment + DMX lighting package with beat-sync and FX",
+    "main": "src/index.js",
+    "scripts": {
+        "start": "node src/index.js"
+    },
+    "dependencies": {
+        "easymidi": "^3.0.0",
+        "yaml": "^2.2.0",
+        "node-dmx": "^1.6.0",
+        "node-hue-api": "^4.0.0",
+        "aubiojs": "^1.0.0",
+        "dotenv": "^16.0.0"
+    }
+}

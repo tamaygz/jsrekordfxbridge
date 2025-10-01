@@ -1,0 +1,8 @@
+# Example blackout effect YAML
+name: blackout
+type: utility
+pattern:
+  - action: set_brightness
+    target: all
+    params:
+    brightness: 0
