@@ -1,62 +1,197 @@
-# JSRekordFXBridge v0.2
+# JSRekordFXBridge v3.0 - TypeScript Edition
 
-# jsrekordbridge: Real-Time Lighting Control for DJs
+> A modern, enterprise-grade DJ lighting control system built with TypeScript, Domain-Driven Design, and dependency injection.
 
-A modern, enterprise-grade DJ lighting control system built with TypeScript, Domain-Driven Design, and dependency injection.
+## 🚀 Overview
 
-## Overview
+JSRekordFXBridge is a professional DJ lighting control system that synchronizes Philips Hue Entertainment lights and DMX fixtures with music. Built from the ground up in TypeScript with clean architecture principles, it provides beat-synced lighting effects, customizable FX patterns, and comprehensive hardware integration.
 
-## 🏗️ Architecture
+### Key Features
 
-`jsrekordbridge` is a Node.js package that enables DJs to synchronize Philips Hue Entertainment lights and DMX fixtures with music from a Pioneer DDJ-400 controller and Rekordbox software. It provides beat-synced lighting effects, customizable FX patterns, and spatial mapping of lights for immersive performances.
+- **🎵 Beat-Synced Lighting** - Real-time synchronization with MIDI clock or audio analysis
+- **🎨 YAML Effect Definitions** - Easy-to-create lighting effects using human-readable YAML
+- **🎛️ Multi-Hardware Support** - Philips Hue, DMX fixtures, and MIDI controllers
+- **🏗️ Enterprise Architecture** - Domain-Driven Design with dependency injection
+- **🎭 Demo Mode** - Full mock implementation for development without hardware
+- **⚡ Real-time Performance** - Low-latency lighting control for live performances
+- **🔧 Hot Reload** - Effects reload automatically when files change
 
-This project follows Domain-Driven Design (DDD) principles with clean architecture:
+## 🏛️ Architecture
 
-## Features
+The system follows Domain-Driven Design (DDD) with clean architecture:
 
 ```
+src/
+├── types/               # Organized type definitions
+│   ├── domain/         # Domain types (lighting, beats, effects, devices, events)
+│   ├── infrastructure/ # DI container types
+│   └── external/       # External library declarations
+├── domain/             # Core business logic & entities
+│   ├── lighting/       # Light controller interfaces & models
+│   ├── dmx/           # DMX controller interfaces & models
+│   ├── midi/          # MIDI controller interfaces & models
+│   ├── effects/       # Effect domain models & repositories
+│   ├── shows/         # Show orchestration & cue management
+│   ├── beat/          # Beat detection & timing services
+│   └── configuration/ # System configuration models
+├── application/        # Use cases & application services
+│   ├── orchestration-service.ts # Main system orchestrator
+│   └── effects/       # Effect engine implementation
+├── infrastructure/     # External dependencies & implementations
+│   ├── lighting/      # Hue & mock light controllers
+│   ├── dmx/          # Real & mock DMX implementations
+│   ├── midi/         # JZZ & mock MIDI implementations
+│   ├── effects/      # File-based effect repository
+│   ├── configuration/ # YAML configuration service
+│   ├── shows/        # YAML show service
+│   ├── beat/         # MIDI clock beat detection
+│   └── di/           # InversifyJS container configuration
+└── interfaces/         # User interfaces
+    └── cli/           # Command line interfaces
+```
 
-src/- **Beat-Synced Lighting**: Synchronize lighting effects with the beat of the music.
+## 🚀 Quick Start
 
-├── domain/           # Core business logic & entities- **Custom FX Effects**: Define lighting effects using YAML files.
+### Prerequisites
 
-│   ├── types.ts      # Shared value objects & interfaces- **Spatial Mapping**: Map musical frequencies (bass, mids, highs) to specific zones in the room.
+- **Node.js** >= 18.0.0
+- **TypeScript** 5.2+
+- **npm** or **yarn**
 
-│   ├── lighting/     # Lighting domain models- **DMX Output**: Control DMX fixtures for stage lighting.
+### Installation
 
-│   ├── dmx/          # DMX domain models  - **Hue Entertainment Streaming**: Utilize Philips Hue's Entertainment API for low-latency lighting control.
+```bash
+git clone https://github.com/tamaygz/jsrekordfxbridge.git
+cd jsrekordfxbridge
+npm install
+```
 
-│   ├── midi/         # MIDI domain models
+### Development
 
-│   ├── effects/      # Effect domain models## Installation
+```bash
+# Run in demo mode (no hardware required)
+npm run demo
 
-│   ├── shows/        # Show domain models
+# Interactive CLI demo
+npm run demo-cli
 
-│   └── configuration/ # Configuration domain models```bash
+# Development with hot reload
+npm run dev
 
-├── application/      # Use cases & application servicesgit clone https://github.com/yourusername/dj-hue-dmx.git
+# Type checking
+npm run type-check
 
-│   └── effects/      # Effect orchestration servicescd dj-hue-dmx
+# Build for production
+npm run build
+npm start
+```
 
-├── infrastructure/   # External dependencies & implementationsnpm install
+## 🎮 Usage
 
-│   ├── lighting/     # Hue, DMX controller implementations````
+### Demo Mode
 
-│   ├── dmx/          # DMX hardware implementations
+The system automatically detects when hardware isn't available and runs in demo mode:
 
-│   ├── midi/         # MIDI controller implementations## Configuration
+```bash
+npm run demo
+```
 
-│   ├── persistence/  # File-based repositories
+Demo mode provides:
+- **Mock Controllers** - Simulated Hue, DMX, and MIDI devices
+- **Full Functionality** - All features work without hardware
+- **Interactive Console** - Global `bridge` variable for live interaction
 
-│   └── di/           # Dependency injection containerConfiguration is managed via YAML and JSON files:
+### Interactive API
 
-└── interfaces/       # User interfaces (CLI, Web, API)
+When running, the system provides a global `bridge` object:
 
-    └── cli/          # Command line interfaces* `config/default-config.yaml`: Main package configuration (Hue bridge, username, DMX interface, MIDI input).
+```javascript
+// Trigger effects
+await bridge.triggerEffect('strobo')
+await bridge.triggerEffect('sweep', 0.8)
 
-```* `effects/`: Directory containing FX effect YAML files (e.g., `strobo.yaml`, `red_suspense.yaml`).
+// Control system
+bridge.setBPM(140)
+await bridge.setMasterBrightness(0.5)
+await bridge.blackout()
 
-* `config/depth-map.json`: Maps musical frequencies to spatial zones in the room.
+// Show management
+await bridge.loadShow('myshow')
+await bridge.startShow()
+
+// System status
+await bridge.showStatus()
+await bridge.listEffects()
+```
+
+### Programmatic API
+
+```typescript
+import { JSRekordFXBridge } from './src/index.js'
+
+const bridge = new JSRekordFXBridge()
+
+async function main() {
+  await bridge.initialize()
+  await bridge.start()
+  
+  // Trigger effects
+  await bridge.triggerEffect('strobo')
+  
+  // Set BPM
+  bridge.setBPM(140)
+  
+  await bridge.stop()
+}
+
+main()
+```
+
+## 🛠️ Configuration
+
+Configuration is managed via YAML files with environment variable substitution:
+
+### `config/default-config.yaml`
+
+```yaml
+midi:
+  device_name: "DDJ-400"
+  map:
+    mode_toggle: "button_1"
+    strobe: "pad_1"
+    suspense: "pad_2"
+    sweep: "pad_3"
+    blackout: "pad_4"
+rekordbox:
+  use_midi_clock: true
+  virtual_port: "rekordbox-out"
+beat_to_light:
+  source: "midi_clock" # options: midi_clock | audio_aubio
+  sensitivity: 0.8
+  default_depth_map: "config/depth-map.yaml"
+hue:
+  enabled: true
+  bridge_id: "${HUE_BRIDGE_ID}"
+  username: "${HUE_USERNAME}"
+  entertainment_id: "${HUE_ENTERTAINMENT_ID}"
+dmx:
+  enabled: true
+  device: "${DMX_DEVICE}"
+effects:
+  directory: "effects"
+```
+
+### Environment Variables
+
+```bash
+# .env
+HUE_BRIDGE_ID=your_bridge_id
+HUE_USERNAME=your_username  
+HUE_ENTERTAINMENT_ID=your_group_id
+DMX_DEVICE=/dev/ttyUSB0
+MIDI_DEVICE_NAME=DDJ-400
+DEMO_MODE=true
+```
 
 ## 🚀 Getting Started
 
@@ -204,128 +339,102 @@ await bridge.stop();## File Structure
 
 ```
 
-## 🏛️ Domain Modelsjsrekordbridge/
+## � Effects System
 
-├── src/
+Effects are defined in YAML files in the `effects/` directory. The system includes several built-in effects:
 
-### Core Entities│   ├── hue.js
+### Available Effects
 
-- **Effect**: Lighting sequences with steps, parameters, and metadata│   ├── fx-engine.js
+- **`strobo.yaml`** - High-intensity strobe effect
+- **`sweep.yaml`** - Color sweep across lights
+- **`red_suspense.yaml`** - Red suspense lighting
+- **`blackout.yaml`** - Turn off all lights
 
-- **Show**: Collections of effects with cues and triggers│   ├── midi.js
-
-- **LightDevice**: Individual controllable lights with capabilities│   ├── rekordbox.js
-
-- **DMXDevice**: DMX fixtures with channel mappings│   ├── dmx.js
-
-- **MIDIDevice**: MIDI controllers and interfaces│   ├── beat-detector.js
-
-│   └── beat-to-light.js
-
-### Value Objects├── config/
-
-- **Color**: RGB color values│   ├── default-config.yaml
-
-- **Position**: 3D spatial coordinates│   ├── depth-map.json
-
-- **Intensity**: Light brightness (0-1)├── effects/
-
-- **BeatPosition**: Musical timing information│   ├── strobo.yaml
-
-- **TimeRange**: Duration specifications│   ├── red_suspense.yaml
-
-│   ├── sweep.yaml
-
-## 🔌 Hardware Integration│   └── blackout.yaml
-
-├── examples/
-
-### Supported Devices│   └── simple-start.js
-
-- **Lighting**: Philips Hue Entertainment, DMX fixtures├── package.json
-
-- **MIDI**: Any MIDI controller, DDJ-400 optimized├── README.md
-
-- **Beat Detection**: MIDI clock, internal generator└── open-todos.md
-
-```
-
-### Mock Implementations
-
-All hardware has mock implementations for development:## Future Extensions
-
-- `MockLightController` - Simulates Hue lights
-
-- `MockDMXController` - Simulates DMX universe* Implement audio analysis-driven beat detection.
-
-- `MockMIDIController` - Simulates MIDI devices* Support for multiple DJ controllers.
-
-- `MockBeatDetector` - Generates beats at configurable BPM* Networked DMX support for large stage setups.
-
-* Advanced FX pattern definitions with easing, loops, and combined effects.
-
-## 🎨 Effects System* Real-time mapping configuration for depth/room zones.
-
-* Unit tests for all modules.
-
-Effects are defined in YAML files in the `effects/` directory:* CLI or GUI for configuring and triggering effects without editing YAML directly.
-
-* Documentation examples for different DJ controllers beyond DDJ-400.
+### Example Effect: `effects/strobo.yaml`
 
 ```yaml
-name: "my_effect"
-description: "Custom lighting effect"
-tags: ["strobe", "party"]
+# Example strobo effect YAML
+name: strobo
+type: generic
 params:
-  color: [255, 0, 0]
+  color: [255,255,255]
   frequency_hz: 10
+  duration_ms: 2000
 pattern:
   - action: pulse
     target: all
     params:
       intensity: 254
-      duration: 100
-  - action: hold
-    params:
-      ms: 200
+      duration: 10
+    repeat: true
 ```
 
-## 🛠️ Configuration
+### Creating Custom Effects
 
-Configuration uses YAML files with environment variable substitution:
+1. Create a new YAML file in the `effects/` directory
+2. Define the effect structure following the schema
+3. The system automatically reloads effects when files change
+4. Use via: `await bridge.triggerEffect('your_effect_name')`
 
-```yaml
-# config/default-config.yaml
-lighting:
-  enabled: true
-  provider: hue
-  hue:
-    bridge_id: "${HUE_BRIDGE_ID}"
-    username: "${HUE_USERNAME}"
-    entertainment_group_id: "${HUE_ENTERTAINMENT_ID}"
+## 🔌 Hardware Integration
 
-dmx:
-  enabled: true
-  provider: enttec
-  device: "${DMX_DEVICE}"
-  universe: 1
+### Supported Devices
 
-midi:
-  enabled: true
-  input_device: "${MIDI_DEVICE_NAME}"
-  clock_source: midi
-```
+- **Lighting**: Philips Hue Entertainment, Mock controllers
+- **DMX**: EnTTec DMX interfaces, Mock DMX universe
+- **MIDI**: Any MIDI controller (optimized for DDJ-400), JZZ MIDI library
+- **Beat Detection**: MIDI clock synchronization, configurable BPM
 
-Environment variables:
-```bash
-# .env
-HUE_BRIDGE_ID=your_bridge_id
-HUE_USERNAME=your_username  
-HUE_ENTERTAINMENT_ID=your_group_id
-DMX_DEVICE=/dev/ttyUSB0
-MIDI_DEVICE_NAME=DDJ-400
-DEMO_MODE=true
-```
+### Mock Implementations
+
+All hardware has comprehensive mock implementations for development:
+
+- **`MockLightController`** - Simulates Hue Entertainment lights with console output
+- **`MockDMXController`** - Simulates DMX universe with channel tracking
+- **`MockMIDIController`** - Simulates MIDI devices with beat generation
+- **Demo Mode** - Automatically activated when hardware credentials are missing
+
+## 🏗️ Domain Models
+
+### Core Entities
+
+- **`Effect`** - Lighting sequences with steps, parameters, and metadata
+- **`Show`** - Collections of effects with cues and beat-synchronized triggers
+- **`LightDevice`** - Individual controllable lights with capabilities and state
+- **`DMXDevice`** - DMX fixtures with channel mappings and capabilities
+- **`MIDIDevice`** - MIDI controllers and interfaces with mapping configuration
+
+### Value Objects
+
+- **`Color`** - RGB color values (0-255)
+- **`Position`** - 3D spatial coordinates for light placement
+- **`Intensity`** - Light brightness levels (0-1)
+- **`BeatPosition`** - Musical timing information (beat, measure, downbeat)
+- **`BPM`** - Beats per minute for tempo synchronization
+- **`TimeRange`** - Duration specifications for effects
+
+## 🏗️ Extending the System
+
+### Adding New Hardware
+
+1. **Create Domain Interface** in `src/domain/`
+2. **Implement Infrastructure** in `src/infrastructure/`
+3. **Register in DI Container** (`src/infrastructure/di/container.ts`)
+4. **Add Mock Implementation** for testing
+5. **Update Configuration** schema and YAML files
+
+### Adding New Effects
+
+1. **Create YAML Definition** in `effects/` directory
+2. **System Automatically Loads** effects on startup and file changes
+3. **Use via API**: `await bridge.triggerEffect('effect_name')`
+
+### Adding New Services
+
+1. **Define Domain Interface** following DDD principles
+2. **Implement Service** in application or infrastructure layer
+3. **Register with InversifyJS** container
+4. **Inject Dependencies** using `@inject()` decorator
 
 ## 🧪 Testing
 
@@ -382,44 +491,91 @@ See `tests/README.md` for detailed documentation of each test file.
 
 ## 🔧 Technology Stack
 
-- **TypeScript 5.2** - Type safety and modern JavaScript features
-- **InversifyJS** - Dependency injection container
-- **ES Modules** - Modern module system
-- **YAML** - Configuration and effect definitions
-- **Node.js 18+** - Runtime environment
+- **TypeScript 5.2+** - Type safety and modern JavaScript features
+- **InversifyJS 6.0** - Dependency injection container with decorators
+- **ES Modules** - Modern module system for Node.js
+- **YAML** - Human-readable configuration and effect definitions
+- **Node.js 18+** - Runtime environment with modern async/await support
+- **Domain-Driven Design** - Clean architecture with clear domain boundaries
 
 ## 📦 Dependencies
 
-### Core
-- `inversify` - Dependency injection
-- `reflect-metadata` - Decorator metadata
-- `yaml` - YAML parsing
-- `dotenv` - Environment variables
+### Core Runtime
+- **`inversify`** - Dependency injection container
+- **`reflect-metadata`** - Decorator metadata for DI
+- **`yaml`** - YAML parsing for configurations and effects
+- **`dotenv`** - Environment variable management
 
-### Hardware
-- `jzz` - MIDI controller interface
-- `dmx` - DMX lighting control
-- `node-hue-api` - Philips Hue integration
+### Hardware Integration
+- **`jzz`** - Cross-platform MIDI controller interface
+- **`dmx`** - DMX lighting control library
+- **`node-hue-api`** - Philips Hue Entertainment API integration
 
-### Development
-- `typescript` - TypeScript compiler
-- `tsx` - TypeScript execution
-- `eslint` - Code linting
-- `@types/node` - Node.js type definitions
+### Development & Build
+- **`typescript`** - TypeScript compiler with strict mode
+- **`tsx`** - Fast TypeScript execution for development
+- **`eslint`** - Code linting with TypeScript rules
+- **`@types/node`** - Node.js type definitions
 
-## 🎯 Future Roadmap
+## 🎯 Current Status & Roadmap
 
-- [ ] Real Hue Entertainment integration
-- [ ] ArtNet/sACN DMX support  
-- [ ] Web-based control interface
-- [ ] Show sequencing system
-- [ ] Audio-reactive effects
-- [ ] Plugin architecture
-- [ ] Cloud sync capabilities
-- [ ] Advanced MIDI mapping
-- [ ] Performance monitoring
-- [ ] Multi-universe DMX support
+### ✅ Implemented Features
+
+- **TypeScript Architecture** - Full DDD with dependency injection
+- **Demo Mode** - Complete mock implementation for development
+- **Effect System** - YAML-based effect definitions with hot reload
+- **MIDI Integration** - JZZ library with mock controllers
+- **DMX Support** - Real and mock DMX controllers
+- **Configuration System** - YAML-based with environment variables
+- **Beat Detection** - MIDI clock synchronization
+- **Interactive API** - Global bridge object for live interaction
+- **Test Suite** - Comprehensive DI container and service tests
+
+### 🚧 In Progress
+
+- [ ] **Real Hue Entertainment** - Physical Philips Hue integration
+- [ ] **Audio Analysis** - Beat detection from audio input
+- [ ] **Show Sequencing** - Advanced cue and timeline management
+- [ ] **Web Interface** - Browser-based control panel
+
+### 🔮 Future Roadmap
+
+- [ ] **ArtNet/sACN** - Professional lighting network protocols
+- [ ] **Plugin Architecture** - Extensible effect and controller system
+- [ ] **Performance Monitoring** - Real-time system metrics
+- [ ] **Multi-universe DMX** - Support for multiple DMX universes
+- [ ] **Cloud Sync** - Configuration and show synchronization
+- [ ] **Advanced MIDI Mapping** - Complex controller mappings
+- [ ] **Mobile App** - iOS/Android remote control
 
 ## 📄 License
 
-MIT License - See LICENSE file for details.
+**MIT License** - See LICENSE file for details.
+
+## 🤝 Contributing
+
+This project follows enterprise-grade development practices:
+
+1. **Fork** the repository
+2. **Create feature branch**: `git checkout -b feature/amazing-feature`
+3. **Follow TypeScript** strict mode and ESLint rules
+4. **Add tests** for new functionality
+5. **Commit changes**: `git commit -m 'Add amazing feature'`  
+6. **Push to branch**: `git push origin feature/amazing-feature`
+7. **Open Pull Request** with detailed description
+
+### Development Setup
+
+```bash
+# Clone and install
+git clone https://github.com/tamaygz/jsrekordfxbridge.git
+cd jsrekordfxbridge
+npm install
+
+# Run tests
+npm run build
+node tests/test-di.js
+
+# Start in demo mode
+npm run demo
+```

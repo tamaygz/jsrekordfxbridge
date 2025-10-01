@@ -1,7 +1,7 @@
 {
     "name": "jsrekordbridge",
-    "version": "0.2.0",
-    "description": "DJ → Hue Entertainment + DMX lighting package with beat-sync and FX",
+    "version": "3.0.0",
+    "description": "DJ lighting control system",
     "type": "module",
     "main": "dist/index.js",
     "scripts": {
