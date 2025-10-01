@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import 'dotenv/config';
 import { DIContainer } from './infrastructure/di/container.js';
 import type { OrchestrationService, OrchestrationStatus } from './application/orchestration-service.js';
 import type { BeatDetectionService } from './domain/beat/beat-detection-service.js';

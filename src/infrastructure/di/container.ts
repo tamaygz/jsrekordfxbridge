@@ -52,8 +52,8 @@ export class DIContainer {
       this.container.bind<ILightController>(TYPES.LightController).toDynamicValue(() => {
         return new HueLightController({
           bridgeIp: process.env.HUE_BRIDGE_IP || process.env.HUE_BRIDGE_ID || '',
-          username: process.env.HUE_USER_ID || process.env.HUE_USERNAME || '',
-          entertainmentGroupId: process.env.HUE_ENTERTAINMENT_GROUP || process.env.HUE_ENTERTAINMENT_ID || ''
+          username: process.env.HUE_USERNAME || process.env.HUE_USER_ID || '',
+          entertainmentGroupId: process.env.HUE_ENTERTAINMENT_GROUP_ID || process.env.HUE_ENTERTAINMENT_GROUP || ''
         });
       }).inSingletonScope();
       console.log('🌉 DI: Using real Hue light controller');
@@ -107,10 +107,8 @@ export class DIContainer {
     // Demo mode if explicitly set, or if required credentials are missing
     return process.env.DEMO_MODE === 'true' || 
            (
-             !process.env.HUE_BRIDGE_IP && 
-             !process.env.HUE_BRIDGE_ID && 
-             !process.env.HUE_USER_ID && 
-             !process.env.HUE_USERNAME
+             (!process.env.HUE_BRIDGE_IP && !process.env.HUE_BRIDGE_ID) || 
+             (!process.env.HUE_USERNAME && !process.env.HUE_USER_ID)
            );
   }
 
