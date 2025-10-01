@@ -9,7 +9,7 @@ midi:
     blackout: "pad_4"
 rekordbox:
   use_midi_clock: true
-  virtual_port: "rekordbox-out"
+  virtual_port: "rekordbox_agg"
 beat_to_light:
   source: "midi_clock" # options: midi_clock | audio_aubio
   sensitivity: 0.8
