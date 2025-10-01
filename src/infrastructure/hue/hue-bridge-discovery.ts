@@ -46,8 +46,7 @@ export class HueBridgeDiscovery {
     try {
       // Dynamically import node-hue-api to handle ES module issues
       if (!hueApi) {
-        const nodeHueApi = await import('node-hue-api');
-        hueApi = nodeHueApi.v3;
+        hueApi = await import('node-hue-api');
       }
       
       // Use N-UPnP discovery (more reliable than mDNS in ES modules)

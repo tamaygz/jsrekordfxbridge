@@ -55,8 +55,7 @@ export class HueEntertainmentSetup {
    */
   private async getApi() {
     if (!hueApi) {
-      const hueApiModule = await import('node-hue-api');
-      hueApi = hueApiModule.v3;
+      hueApi = await import('node-hue-api');
     }
 
     return hueApi.v3.api.createLocal(this.ipAddress).connect(this.username);

@@ -51,8 +51,7 @@ export class HueLightController extends LightController {
       
       // Dynamically import node-hue-api to handle ES module issues
       if (!hueApi) {
-        const hueApiModule = await import('node-hue-api');
-        hueApi = hueApiModule.v3;
+        hueApi = await import('node-hue-api');
       }
       
       // Connect to Hue Bridge
@@ -270,11 +269,10 @@ export class HueLightController extends LightController {
       try {
         const lightId = this.parseIntId(command.lightId);
         if (!hueApi) {
-          const hueApiModule = await import('node-hue-api');
-          hueApi = hueApiModule.v3;
+          hueApi = await import('node-hue-api');
         }
         
-        const lightState = new hueApi.lightStates.LightState()
+        const lightState = new hueApi.v3.lightStates.LightState()
           .on()
           .rgb(
             Math.round(command.state.color.r),
