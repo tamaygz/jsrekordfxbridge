@@ -169,9 +169,9 @@ export class FileConfigurationService implements ConfigurationService {
   private createHueConfiguration(fileConfig?: ConfigurationFile['hue']): HueConfiguration {
     return {
       bridgeIp: this.environment.HUE_BRIDGE_IP || fileConfig?.bridgeIp || '',
-      userId: this.environment.HUE_USER_ID || fileConfig?.userId || '',
+      userId: this.environment.HUE_USERNAME || this.environment.HUE_USER_ID || fileConfig?.userId || '',
       clientKey: this.environment.HUE_CLIENT_KEY || fileConfig?.clientKey || '',
-      entertainmentGroup: this.environment.HUE_ENTERTAINMENT_GROUP || fileConfig?.entertainmentGroup || '',
+      entertainmentGroup: this.environment.HUE_ENTERTAINMENT_GROUP_ID || this.environment.HUE_ENTERTAINMENT_GROUP || fileConfig?.entertainmentGroup || '',
       useStreamingApi: this.parseBooleanEnv('HUE_USE_STREAMING') ?? fileConfig?.useStreamingApi ?? true,
       maxBrightness: this.parseNumberEnv('HUE_MAX_BRIGHTNESS') ?? fileConfig?.maxBrightness ?? 254,
       transitionTime: this.parseNumberEnv('HUE_TRANSITION_TIME') ?? fileConfig?.transitionTime ?? 300
