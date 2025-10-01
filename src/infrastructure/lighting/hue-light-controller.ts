@@ -248,6 +248,9 @@ export class HueLightController extends LightController {
       console.log('🌉 Hue: Waiting for bridge to enable streaming...');
       await new Promise(resolve => setTimeout(resolve, 3000));
 
+      // Turn on the entire Entertainment group with 0 brightness to prepare for sync mode
+      await this.turnOnGroupWithZeroBrightness();
+
       // Create DTLS streaming client
       console.log('🌉 Hue: Creating DTLS streaming connection...');
       this.streamingClient = new HueDtlsStreamController(
@@ -276,6 +279,9 @@ export class HueLightController extends LightController {
         // We can use REST mode for Entertainment streaming
         this.streaming = true;
         console.log('🌉 Hue: Entertainment streaming active in REST mode');
+        
+        // Turn on the Entertainment group with 0 brightness for sync mode
+        await this.turnOnGroupWithZeroBrightness();
       }
       
     } catch (error) {
@@ -310,12 +316,11 @@ export class HueLightController extends LightController {
           // For zero intensity, send black (off)
           rgbData[lightId] = [0, 0, 0];
         } else {
-          // Apply intensity to RGB values (intensity is 0-254, normalize to 0-1)
-          const normalizedIntensity = intensity / 254;
+          // Apply intensity to RGB values (intensity is 0-1, use directly)
           rgbData[lightId] = [
-            Math.round(command.state.color.r * normalizedIntensity),
-            Math.round(command.state.color.g * normalizedIntensity),
-            Math.round(command.state.color.b * normalizedIntensity)
+            Math.round(command.state.color.r * intensity),
+            Math.round(command.state.color.g * intensity),
+            Math.round(command.state.color.b * intensity)
           ];
         }
       }
@@ -348,12 +353,14 @@ export class HueLightController extends LightController {
       if (this.config.entertainmentGroupId && commands.length > 1) {
         // Try to use group command for multiple lights (more efficient)
         const firstCommand = commands[0];
-        if (firstCommand && commands.every(cmd => 
-          cmd.state.color.r === firstCommand.state.color.r &&
-          cmd.state.color.g === firstCommand.state.color.g &&
-          cmd.state.color.b === firstCommand.state.color.b &&
-          cmd.state.intensity.value === firstCommand.state.intensity.value
-        )) {
+        if (firstCommand && firstCommand.state && firstCommand.state.color && firstCommand.state.intensity && 
+            commands.every(cmd => 
+              cmd && cmd.state && cmd.state.color && cmd.state.intensity &&
+              cmd.state.color.r === firstCommand.state.color.r &&
+              cmd.state.color.g === firstCommand.state.color.g &&
+              cmd.state.color.b === firstCommand.state.color.b &&
+              cmd.state.intensity.value === firstCommand.state.intensity.value
+            )) {
           // All commands are identical, use group command
           await this.sendGroupRestCommand(firstCommand);
           return;
@@ -372,6 +379,10 @@ export class HueLightController extends LightController {
 
   private async sendGroupRestCommand(command: LightCommand): Promise<void> {
     if (!this.api || !this.config.entertainmentGroupId) return;
+    if (!command || !command.state || !command.state.intensity || !command.state.color) {
+      console.warn('🌉 Hue: Invalid command structure in sendGroupRestCommand');
+      return;
+    }
 
     try {
       if (!hueApi) {
@@ -383,8 +394,8 @@ export class HueLightController extends LightController {
       if (command.state.intensity.value === 0) {
         groupState.off();
       } else {
-        // Group brightness expects percentage (0-100), not 0-254
-        const brightnessPercent = Math.max(1, Math.round((command.state.intensity.value / 254) * 100));
+        // Group brightness expects percentage (0-100), intensity.value is 0-1
+        const brightnessPercent = Math.max(1, Math.round(command.state.intensity.value * 100));
         groupState
           .on()
           .brightness(brightnessPercent);
@@ -402,11 +413,41 @@ export class HueLightController extends LightController {
     }
   }
 
+  private async turnOnGroupWithZeroBrightness(): Promise<void> {
+    if (!this.api || !this.config.entertainmentGroupId) return;
+
+    try {
+      if (!hueApi) {
+        hueApi = await import('node-hue-api');
+      }
+      
+      console.log('🌉 Hue: Turning on Entertainment group with 0 brightness for sync mode...');
+      
+      // Create a group state that turns on lights with minimum brightness (1%)
+      // This ensures lights are in "on" state but appear off to the user
+      const groupState = new hueApi.v3.lightStates.GroupLightState()
+        .on()
+        .brightness(1); // Minimum brightness (1%) - lights are on but appear off
+      
+      await this.api.groups.setGroupState(this.config.entertainmentGroupId, groupState);
+      console.log('🌉 Hue: Entertainment group lights turned on with minimum brightness');
+      
+    } catch (error) {
+      console.warn('🌉 Hue: Failed to turn on Entertainment group:', error);
+      // Don't throw error - this is not critical for streaming functionality
+    }
+  }
+
   private async sendRestCommands(commands: LightCommand[]): Promise<void> {
     if (!this.api) return;
 
     const promises = commands.map(async (command) => {
       try {
+        if (!command || !command.state || !command.state.intensity || !command.state.color) {
+          console.warn('🌉 Hue: Invalid command structure in sendRestCommands');
+          return;
+        }
+        
         const lightId = this.parseIntId(command.lightId);
         if (!hueApi) {
           hueApi = await import('node-hue-api');
@@ -418,8 +459,8 @@ export class HueLightController extends LightController {
           // Turn light off for zero intensity
           lightState.off();
         } else {
-          // Use intensity directly (already 0-254 range)
-          const brightness = Math.max(1, Math.round(command.state.intensity.value));
+          // Convert intensity from 0-1 to percentage (0-100)
+          const brightnessPercent = Math.max(1, Math.round(command.state.intensity.value * 100));
           lightState
             .on()
             .rgb(
@@ -427,7 +468,7 @@ export class HueLightController extends LightController {
               Math.round(command.state.color.g),
               Math.round(command.state.color.b)
             )
-            .brightness(brightness);
+            .brightness(brightnessPercent);
         }
 
         await this.api.lights.setLightState(lightId.toString(), lightState);

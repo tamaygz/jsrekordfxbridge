@@ -52,7 +52,7 @@ async function testStreaming() {
         console.log('Starting Entertainment streaming...');
         await controller.startEntertainmentStream();
         
-        // Send some test colors
+        // Send test colors via streaming
         console.log('Sending test colors via streaming...');
         const testColors = [
             { r: 255, g: 0, b: 0 },
@@ -63,7 +63,17 @@ async function testStreaming() {
             { r: 0, g: 255, b: 255 }
         ];
         
-        await controller.sendStreamingCommands(testColors);
+        // Convert to proper LightCommand structure using actual Entertainment group light IDs
+        const entertainmentLights = [34, 35, 36, 40, 41, 42]; // Terrace Lily lights
+        const lightCommands = testColors.map((color, index) => ({
+            lightId: { value: entertainmentLights[index].toString() },
+            state: {
+                color,
+                intensity: { value: 0.8 } // 80% brightness
+            }
+        }));
+        
+        await controller.sendCommands(lightCommands);
         
         // Wait a bit to see the effect
         console.log('Waiting 5 seconds...');
@@ -80,7 +90,16 @@ async function testStreaming() {
             { r: 255, g: 0, b: 127 }
         ];
         
-        await controller.sendStreamingCommands(testColors2);
+        // Convert to proper LightCommand structure using actual Entertainment group light IDs
+        const lightCommands2 = testColors2.map((color, index) => ({
+            lightId: { value: entertainmentLights[index].toString() },
+            state: {
+                color,
+                intensity: { value: 1.0 } // 100% brightness
+            }
+        }));
+        
+        await controller.sendCommands(lightCommands2);
         
         console.log('Test completed successfully!');
         

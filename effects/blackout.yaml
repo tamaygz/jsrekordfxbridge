@@ -1,8 +1,12 @@
-# Example blackout effect YAML
+# Blackout effect YAML
 name: blackout
-type: utility
-pattern:
-  - action: set_brightness
-    target: all
-    params:
-    brightness: 0
+description: "Turn off all lights"
+steps:
+  - action:
+      type: fade
+      color: { r: 0, g: 0, b: 0 }
+      intensity: 0.0
+    duration: 100
+    target:
+      type: all
+      selector: all

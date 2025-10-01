@@ -106,6 +106,11 @@ export class MockLightController extends LightController {
     await this.setAllLights(color, intensity);
   }
 
+  getLightOrder(): readonly number[] {
+    // For mock, return sequential light IDs
+    return this.devices.map(device => parseInt(String(device.id.value), 10));
+  }
+
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }

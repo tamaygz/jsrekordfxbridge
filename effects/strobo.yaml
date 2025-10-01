@@ -1,14 +1,20 @@
-# Example strobo effect YAML
+# Strobo effect YAML
 name: strobo
-type: generic
-params:
-  color: [255,255,255]
-  frequency_hz: 10
-  duration_ms: 2000
-pattern:
-  - action: pulse
-    target: all
-    params:
-      intensity: 254
-      duration: 10
-    repeat: true
+description: "Strobe effect with white flashing lights"
+steps:
+  - action:
+      type: pulse
+      color: { r: 255, g: 255, b: 255 }
+      intensity: 1.0
+    duration: 100
+    target:
+      type: all
+      selector: all
+  - action:
+      type: fade
+      color: { r: 0, g: 0, b: 0 }
+      intensity: 0.0
+    duration: 100
+    target:
+      type: all
+      selector: all

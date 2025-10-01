@@ -128,10 +128,11 @@ export class EffectEngineService implements EffectEngine {
       const color: Color = step.action.color || { r: 255, g: 255, b: 255 };
       const intensity: Intensity = step.action.intensity || { value: 1 };
 
-      // Apply to all lights for now (would use step.target in real implementation)
-      for (let i = 1; i <= 6; i++) {
+      // Use actual light IDs from the light controller (Entertainment group lights)
+      const lightIds = this.lightController.getLightOrder();
+      for (const lightId of lightIds) {
         lightCommands.push({
-          lightId: { value: i.toString() } as LightId,
+          lightId: { value: lightId.toString() } as LightId,
           state: {
             color,
             intensity
@@ -151,8 +152,12 @@ export class EffectEngineService implements EffectEngine {
 
     const intensity: Intensity = { value: beatType === 'downbeat' ? 1 : 0.6 };
 
+    // Use the first light from the Entertainment group
+    const lightIds = this.lightController.getLightOrder();
+    const firstLightId = lightIds.length > 0 ? lightIds[0]! : 1;
+
     const commands = [{
-      lightId: { value: '1' } as LightId,
+      lightId: { value: firstLightId.toString() } as LightId,
       state: { color, intensity }
     }];
 
@@ -161,14 +166,14 @@ export class EffectEngineService implements EffectEngine {
     // Quick fade out
     setTimeout(async () => {
       const fadeCommands = [{
-        lightId: { value: '1' } as LightId,
+        lightId: { value: firstLightId.toString() } as LightId,
         state: { 
           color: { r: 0, g: 0, b: 0 }, 
           intensity: { value: 0 } 
         }
       }];
       await this.lightController.sendCommands(fadeCommands);
-    }, 80);
+    }, 100);
   }
 
   private delay(ms: number): Promise<void> {

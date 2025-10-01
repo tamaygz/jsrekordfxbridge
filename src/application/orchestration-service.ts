@@ -123,8 +123,8 @@ export class BeatToLightOrchestrationService implements OrchestrationService {
       // Apply master brightness
       const adjustedIntensity = intensity * this.masterBrightness;
 
-      // Execute effect on all available outputs
-      await this.executeEffect(effect, adjustedIntensity);
+      // Execute effect through the effect engine
+      await this.effectEngineService.executeEffect(effect, adjustedIntensity);
       
       this.activeEffects.add(effectName);
       

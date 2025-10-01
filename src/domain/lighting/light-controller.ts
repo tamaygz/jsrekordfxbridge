@@ -42,6 +42,7 @@ export interface ILightController {
   connect(): Promise<void>;
   disconnect(): Promise<void>;
   isConnected(): boolean;
+  getLightOrder(): readonly number[];
   
   // Convenience methods for common operations
   setLight(lightId: LightId, color: Color, intensity?: Intensity): Promise<void>;
@@ -55,6 +56,7 @@ export abstract class LightController implements ILightController {
   abstract connect(): Promise<void>;
   abstract disconnect(): Promise<void>;
   abstract isConnected(): boolean;
+  abstract getLightOrder(): readonly number[];
   abstract setLight(lightId: LightId, color: Color, intensity?: Intensity): Promise<void>;
   abstract setAllLights(color: Color, intensity?: Intensity): Promise<void>;
   abstract setLightGroup(groupId: string, color: Color, intensity?: Intensity): Promise<void>;

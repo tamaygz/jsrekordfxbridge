@@ -5,6 +5,8 @@ import type {
 } from '../../domain/effects/effect-engine-service.js';
 import type { EffectRepository } from '../../domain/effects/effect-repository.js';
 import type { Effect } from '../../domain/effects/effect.js';
+import type { ILightController } from '../../domain/lighting/light-controller.js';
+import type { DMXController } from '../../domain/dmx/dmx-controller.js';
 import { TYPES } from '../../types/infrastructure/di-container.js';
 
 @injectable()
@@ -13,7 +15,9 @@ export class EffectEngineServiceImpl implements EffectEngineService {
   private loaded = false;
 
   constructor(
-    @inject(TYPES.EffectRepository) private effectRepository: EffectRepository
+    @inject(TYPES.EffectRepository) private effectRepository: EffectRepository,
+    @inject(TYPES.LightController) private lightController: ILightController,
+    @inject(TYPES.DMXController) private dmxController: DMXController
   ) {}
 
   async loadEffects(): Promise<void> {
@@ -71,28 +75,18 @@ export class EffectEngineServiceImpl implements EffectEngineService {
     try {
       console.log(`🎨 Effect Engine: Executing effect "${effect.name}" at ${Math.round(intensity * 100)}% intensity`);
       
+      // Actually execute the effect steps
       const context: EffectExecutionContext = {
         timestamp: Date.now(),
         intensity: Math.max(0, Math.min(1, intensity))
       };
       
-      // For now, just log the effect execution
-      // In a full implementation, this would:
-      // 1. Process effect steps
-      // 2. Generate light and DMX commands
-      // 3. Send commands to controllers
-      // 4. Handle timing and transitions
-      
-      console.log(`🎨 Effect Engine: Effect "${effect.name}" has ${effect.steps.length} steps`);
-      
       for (const step of effect.steps) {
-        console.log(`🎨 Effect Engine: Step - ${step.action.type} for ${step.duration.durationMs}ms`);
+        await this.executeStep(step, context);
         
-        // Simple execution - just log what would happen
-        if (step.action.type === 'blackout') {
-          console.log('🎨 Effect Engine: Would execute blackout');
-        } else if (step.action.color) {
-          console.log(`🎨 Effect Engine: Would set color RGB(${step.action.color.r}, ${step.action.color.g}, ${step.action.color.b})`);
+        // Wait for step duration
+        if (step.duration.durationMs > 0) {
+          await new Promise(resolve => setTimeout(resolve, step.duration.durationMs));
         }
       }
       
@@ -103,6 +97,8 @@ export class EffectEngineServiceImpl implements EffectEngineService {
       throw error;
     }
   }
+
+
 
   // Helper methods for effect processing
   private processEffectStep(step: any, context: EffectExecutionContext): any {
@@ -130,36 +126,61 @@ export class EffectEngineServiceImpl implements EffectEngineService {
   private async executeStep(step: any, context: EffectExecutionContext): Promise<void> {
     const processedStep = this.processEffectStep(step, context);
     
-    // Here we would actually send commands to hardware controllers
-    // For now, just simulate the execution
+    // Actually send commands to hardware controllers
+    if (processedStep.action.type === 'fade' || processedStep.action.type === 'pulse') {
+      const lightCommands = [];
+      
+      // Get the actual Entertainment group light IDs
+      const lightIds = this.lightController.getLightOrder();
+      
+      for (const lightId of lightIds) {
+        lightCommands.push({
+          lightId: { value: lightId.toString() },
+          state: {
+            color: processedStep.action.color || { r: 255, g: 255, b: 255 },
+            intensity: processedStep.action.intensity || { value: context.intensity }
+          }
+        });
+      }
+      
+      if (lightCommands.length > 0) {
+        console.log(`🎨 Effect Engine: Sending commands to ${lightCommands.length} lights`);
+        await this.lightController.sendCommands(lightCommands);
+      }
+    }
     
     switch (processedStep.action.type) {
       case 'fade':
-        console.log(`🎨 Effect Engine: Fading to color over ${processedStep.duration.durationMs}ms`);
+        console.log(`🎨 Effect Engine: Executed fade to color over ${processedStep.duration.durationMs}ms`);
         break;
         
       case 'pulse':
-        console.log(`🎨 Effect Engine: Pulsing for ${processedStep.duration.durationMs}ms`);
-        break;
-        
-      case 'sweep':
-        console.log(`🎨 Effect Engine: Sweeping across lights for ${processedStep.duration.durationMs}ms`);
-        break;
-        
-      case 'strobe':
-        console.log(`🎨 Effect Engine: Strobing for ${processedStep.duration.durationMs}ms`);
-        break;
-        
-      case 'hold':
-        console.log(`🎨 Effect Engine: Holding current state for ${processedStep.duration.durationMs}ms`);
+        console.log(`🎨 Effect Engine: Executed pulse for ${processedStep.duration.durationMs}ms`);
         break;
         
       case 'blackout':
-        console.log(`🎨 Effect Engine: Blackout for ${processedStep.duration.durationMs}ms`);
+        // Send blackout commands
+        const blackoutCommands = [];
+        const lightIds = this.lightController.getLightOrder();
+        
+        for (const lightId of lightIds) {
+          blackoutCommands.push({
+            lightId: { value: lightId.toString() },
+            state: {
+              color: { r: 0, g: 0, b: 0 },
+              intensity: { value: 0 }
+            }
+          });
+        }
+        
+        if (blackoutCommands.length > 0) {
+          console.log(`🎨 Effect Engine: Sending blackout to ${blackoutCommands.length} lights`);
+          await this.lightController.sendCommands(blackoutCommands);
+        }
         break;
         
       default:
-        console.warn(`🎨 Effect Engine: Unknown effect action type: ${processedStep.action.type}`);
+        console.log(`🎨 Effect Engine: Unknown action type: ${processedStep.action.type}`);
     }
   }
 
