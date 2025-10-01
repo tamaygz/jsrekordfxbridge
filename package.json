@@ -2,17 +2,39 @@
     "name": "jsrekordbridge",
     "version": "0.1.0",
     "description": "DJ → Hue Entertainment + DMX lighting package with beat-sync and FX",
-    "main": "src/index.js",
+    "type": "module",
+    "main": "dist/index.js",
     "scripts": {
-        "start": "node src/index.js",
-        "demo": "DEMO_MODE=true node src/index.js",
-        "demo-cli": "node examples/demo-cli.js"
+        "build": "tsc",
+        "build:watch": "tsc --watch",
+        "start": "npm run build && node dist/index.js",
+        "dev": "tsx src/index.ts",
+        "demo": "DEMO_MODE=true tsx src/index.ts",
+        "demo-cli": "tsx src/interfaces/cli/demo-cli.ts",
+        "clean": "rm -rf dist",
+        "lint": "eslint src --ext .ts",
+        "type-check": "tsc --noEmit"
     },
     "dependencies": {
         "dmx": "^0.25.1",
         "dotenv": "^16.0.0",
+        "inversify": "^6.0.2",
         "jzz": "^1.9.6",
         "node-hue-api": "^5.0.0-beta.16",
+        "reflect-metadata": "^0.2.2",
+        "tslib": "^2.8.1",
         "yaml": "^2.2.0"
+    },
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "@types/yaml": "^1.9.7",
+        "@typescript-eslint/eslint-plugin": "^6.0.0",
+        "@typescript-eslint/parser": "^6.0.0",
+        "eslint": "^8.0.0",
+        "tsx": "^4.0.0",
+        "typescript": "^5.2.0"
+    },
+    "engines": {
+        "node": ">=18.0.0"
     }
 }
