@@ -5,6 +5,7 @@ import 'reflect-metadata';
 import type { ILightController } from '../../domain/lighting/light-controller.js';
 import type { DMXController } from '../../domain/dmx/dmx-controller.js';
 import type { IMIDIController } from '../../domain/midi/midi-controller.js';
+import type { IRekordboxController } from '../../domain/rekordbox/rekordbox-controller.js';
 import type { EffectRepository } from '../../domain/effects/effect-repository.js';
 import type { EffectEngine } from '../../domain/effects/effect-engine.js';
 import type { EffectExecutor } from '../../domain/effects/effect-executor.js';
@@ -20,6 +21,8 @@ import { RealDMXController, createRealDMXController } from '../dmx/real-dmx-cont
 import { MockDMXController } from '../dmx/mock-dmx-controller.js';
 import { MockMIDIController } from '../midi/mock-midi-controller.js';
 import { JZZMIDIController } from '../midi/jzz-midi-controller.js';
+import { MIDIRekordboxController } from '../rekordbox/midi-rekordbox-controller.js';
+import { MockRekordboxController } from '../rekordbox/mock-rekordbox-controller.js';
 import { FileEffectRepository } from '../effects/file-effect-repository.js';
 import { EffectEngineService } from '../../application/effects/effect-engine.service.js';
 import { HardwareEffectExecutor } from '../effects/hardware-effect-executor.js';
@@ -86,6 +89,18 @@ export class DIContainer {
       console.log('🎹 DI: Using real MIDI controller');
     }
     
+    // Bind Rekordbox controller
+    if (isDemoMode) {
+      this.container.bind<IRekordboxController>(TYPES.RekordboxController).to(MockRekordboxController).inSingletonScope();
+      console.log('🎭 DI: Using mock Rekordbox controller');
+    } else {
+      this.container.bind<IRekordboxController>(TYPES.RekordboxController).toDynamicValue((context) => {
+        const midiController = context.container.get<IMIDIController>(TYPES.MIDIController);
+        return new MIDIRekordboxController(midiController);
+      }).inSingletonScope();
+      console.log('🎚️ DI: Using real Rekordbox controller');
+    }
+    
     // Bind repositories
     this.container.bind<EffectRepository>(TYPES.EffectRepository).to(FileEffectRepository).inSingletonScope();
     
@@ -135,6 +150,10 @@ export class DIContainer {
 
   getMIDIController(): IMIDIController {
     return this.get<IMIDIController>(TYPES.MIDIController);
+  }
+
+  getRekordboxController(): IRekordboxController {
+    return this.get<IRekordboxController>(TYPES.RekordboxController);
   }
 
   getBeatDetectionService(): BeatDetectionService {

@@ -2,6 +2,7 @@ import { injectable, inject } from 'inversify';
 import type { ILightController } from '../domain/lighting/light-controller.js';
 import type { DMXController } from '../domain/dmx/dmx-controller.js';
 import type { IMIDIController } from '../domain/midi/midi-controller.js';
+import type { IRekordboxController } from '../domain/rekordbox/rekordbox-controller.js';
 import type { BeatDetectionService } from '../domain/beat/beat-detection-service.js';
 import type { EffectEngine } from '../domain/effects/effect-engine.js';
 import type { EffectRepository } from '../domain/effects/effect-repository.js';
@@ -34,8 +35,11 @@ export interface OrchestrationStatus {
     readonly lights: boolean;
     readonly dmx: boolean;
     readonly midi: boolean;
+    readonly rekordbox: boolean;
   };
   readonly currentBPM: number | null;
+  readonly rekordboxBPM: number | null;
+  readonly activeChannel: number | null;
   readonly currentShow: string | null;
   readonly activeEffects: string[];
   readonly masterBrightness: number;
@@ -52,6 +56,7 @@ export class BeatToLightOrchestrationService implements OrchestrationService {
     @inject(TYPES.LightController) private lightController: ILightController,
     @inject(TYPES.DMXController) private dmxController: DMXController,
     @inject(TYPES.MIDIController) private midiController: IMIDIController,
+    @inject(TYPES.RekordboxController) private rekordboxController: IRekordboxController,
     @inject(TYPES.BeatDetectionService) private beatDetectionService: BeatDetectionService,
     @inject(TYPES.EffectEngine) private effectEngine: EffectEngine,
     @inject(TYPES.EffectRepository) private effectRepository: EffectRepository,
@@ -200,14 +205,19 @@ export class BeatToLightOrchestrationService implements OrchestrationService {
   }
 
   async getStatus(): Promise<OrchestrationStatus> {
+    const rekordboxStatus = this.rekordboxController.getStatus();
+    
     return {
       running: this.isActive,
       connections: {
         lights: this.lightController.isConnected(),
         dmx: this.dmxController.isConnected(),
-        midi: this.midiController.isConnected()
+        midi: this.midiController.isConnected(),
+        rekordbox: this.rekordboxController.isConnected()
       },
       currentBPM: this.beatDetectionService.getCurrentBPM(),
+      rekordboxBPM: rekordboxStatus.masterBPM,
+      activeChannel: rekordboxStatus.activeChannel,
       currentShow: this.currentShow,
       activeEffects: Array.from(this.activeEffects),
       masterBrightness: this.masterBrightness
@@ -220,14 +230,15 @@ export class BeatToLightOrchestrationService implements OrchestrationService {
     const initPromises = [
       this.initializeLightController(),
       this.initializeDMXController(),
-      this.initializeMIDIController()
+      this.initializeMIDIController(),
+      this.initializeRekordboxController()
     ];
 
     // Wait for all controllers but don't fail if some are unavailable
     const results = await Promise.allSettled(initPromises);
     
     results.forEach((result, index) => {
-      const controllerNames = ['Lights', 'DMX', 'MIDI'];
+      const controllerNames = ['Lights', 'DMX', 'MIDI', 'Rekordbox'];
       if (result.status === 'rejected') {
         console.warn(`🎵 Orchestration: ${controllerNames[index]} controller failed to initialize:`, result.reason);
       }
@@ -258,6 +269,18 @@ export class BeatToLightOrchestrationService implements OrchestrationService {
       console.log('🎵 Orchestration: MIDI controller connected');
     } catch (error) {
       console.warn('🎵 Orchestration: MIDI controller connection failed:', error);
+    }
+  }
+
+  private async initializeRekordboxController(): Promise<void> {
+    try {
+      await this.rekordboxController.connect();
+      console.log('🎵 Orchestration: Rekordbox controller connected');
+      
+      // Set up rekordbox callbacks to sync BPM
+      this.setupRekordboxCallbacks();
+    } catch (error) {
+      console.warn('🎵 Orchestration: Rekordbox controller connection failed:', error);
     }
   }
 
@@ -388,6 +411,46 @@ export class BeatToLightOrchestrationService implements OrchestrationService {
     }
   }
 
+  private setupRekordboxCallbacks(): void {
+    // Sync BPM from rekordbox to beat detection service
+    this.rekordboxController.onBPMChange((channel, bpm) => {
+      try {
+        console.log(`🎚️ Rekordbox: Channel ${channel} BPM changed to ${bpm.toFixed(1)}`);
+        
+        // Update beat detection service with the new BPM
+        this.beatDetectionService.setBPM(bpm);
+      } catch (error) {
+        console.error('🎵 Orchestration: Error handling rekordbox BPM change:', error);
+      }
+    });
+
+    // React to channel changes
+    this.rekordboxController.onChannelChange((channel) => {
+      try {
+        if (channel.isPlaying && channel.bpm) {
+          console.log(`🎚️ Rekordbox: Channel ${channel.channel} is playing at ${channel.bpm.toFixed(1)} BPM`);
+        }
+      } catch (error) {
+        console.error('🎵 Orchestration: Error handling rekordbox channel change:', error);
+      }
+    });
+
+    // React to master channel changes
+    this.rekordboxController.onMasterChannelChange((channel) => {
+      try {
+        console.log(`🎚️ Rekordbox: Master channel changed to ${channel}`);
+        
+        // Get the BPM of the new master channel and sync it
+        const channelBPM = this.rekordboxController.getChannelBPM(channel);
+        if (channelBPM) {
+          this.beatDetectionService.setBPM(channelBPM);
+        }
+      } catch (error) {
+        console.error('🎵 Orchestration: Error handling rekordbox master channel change:', error);
+      }
+    });
+  }
+
   private async cleanup(): Promise<void> {
     try {
       // Stop all services
@@ -401,7 +464,8 @@ export class BeatToLightOrchestrationService implements OrchestrationService {
       await Promise.allSettled([
         this.lightController.disconnect(),
         this.dmxController.disconnect(),
-        this.midiController.disconnect()
+        this.midiController.disconnect(),
+        this.rekordboxController.disconnect()
       ]);
 
       this.activeEffects.clear();
