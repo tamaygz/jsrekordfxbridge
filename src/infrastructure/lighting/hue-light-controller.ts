@@ -78,13 +78,15 @@ export class HueLightController extends LightController {
   async disconnect(): Promise<void> {
     console.log('🌉 Hue: Disconnecting...');
     
-    if (this.streamingClient) {
+    // Stop entertainment streaming if active
+    if (this.streaming && this.api) {
       try {
-        this.streamingClient.disconnect();
+        console.log('🌉 Hue: Stopping entertainment streaming...');
+        await this.api.groups.disableStreaming(this.config.entertainmentGroupId);
+        console.log('🌉 Hue: Entertainment streaming stopped');
       } catch (error) {
-        console.warn('🌉 Hue: Error disconnecting streaming client:', error);
+        console.warn('🌉 Hue: Error stopping entertainment streaming:', error);
       }
-      this.streamingClient = null;
     }
 
     this.streaming = false;
@@ -215,23 +217,23 @@ export class HueLightController extends LightController {
     }
 
     try {
-      // Check if streaming is available
-      if (!this.api.streaming || !this.api.streaming.createClient) {
-        console.warn('🌉 Hue: Entertainment streaming not available, using REST mode');
+      // Check if we have the required client key for streaming
+      if (!this.config.clientKey) {
+        console.warn('🌉 Hue: No client key available, using REST mode');
         return;
       }
 
       console.log('🌉 Hue: Starting entertainment streaming...');
       
-      const client = this.api.streaming.createClient();
+      // Enable streaming on the Entertainment group
+      const streamingEnabled = await this.api.groups.enableStreaming(this.config.entertainmentGroupId);
       
-      // Create light objects for streaming
-      const lightObjects = this.lightOrder.map(id => ({ id }));
+      if (!streamingEnabled) {
+        console.warn('🌉 Hue: Failed to enable streaming on Entertainment group, using REST mode');
+        return;
+      }
 
-      // Connect to entertainment group
-      await client.connect(this.config.entertainmentGroupId);
-      
-      this.streamingClient = client;
+      console.log('🌉 Hue: Entertainment streaming enabled successfully!');
       this.streaming = true;
       
       console.log('🌉 Hue: Entertainment streaming started successfully');

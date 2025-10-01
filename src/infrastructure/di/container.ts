@@ -53,6 +53,7 @@ export class DIContainer {
         return new HueLightController({
           bridgeIp: process.env.HUE_BRIDGE_IP || process.env.HUE_BRIDGE_ID || '',
           username: process.env.HUE_USERNAME || process.env.HUE_USER_ID || '',
+          clientKey: process.env.HUE_CLIENT_KEY || '',
           entertainmentGroupId: process.env.HUE_ENTERTAINMENT_GROUP_ID || process.env.HUE_ENTERTAINMENT_GROUP || ''
         });
       }).inSingletonScope();
