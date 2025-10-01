@@ -1,15 +1,16 @@
 # Development Todos & Roadmap
 
-> Current status: **TypeScript architecture complete** with comprehensive DI system and demo mode fully functional.
+> Current status: **Clean Architecture implementation complete** with proper separation of concerns, effect system refactored, and Philips Hue Entertainment integration working.
 
 ## 🚧 High Priority (Next Release)
 
 ### Real Hardware Integration
 - **Hue Entertainment Streaming**
   - ✅ Domain interfaces and mock implementation complete
-  - 🔄 Implement real Philips Hue Entertainment API integration
-  - 🔄 Add DTLS secure communication with Hue Bridge
-  - 🔄 Test with physical Hue Entertainment groups
+  - ✅ Real Philips Hue Entertainment API integration implemented
+  - ✅ DTLS secure communication with Hue Bridge (with REST fallback)
+  - ✅ Tested with physical Hue Entertainment groups and terrace lighting
+  - ✅ Proper Entertainment streaming cleanup and light targeting
 
 - **Audio Beat Detection**
   - 🔄 Integrate `aubiojs` library for real-time audio analysis
@@ -84,14 +85,18 @@
 
 ### Core Architecture
 - ✅ **TypeScript Migration** - Complete DDD architecture with clean separation
+- ✅ **Clean Architecture Implementation** - Proper Domain/Application/Infrastructure separation
+- ✅ **Effect System Refactoring** - Eliminated competing implementations, single responsibility
 - ✅ **Dependency Injection** - InversifyJS with proper container configuration
 - ✅ **Type System** - Organized domain types with focused responsibilities
 - ✅ **Demo Mode** - Comprehensive mock implementations for all hardware
-- ✅ **Effect Engine** - YAML-based effects with hot-reload capability
+- ✅ **Effect Engine** - Clean architecture with EffectEngine/EffectExecutor/EffectRepository
+- ✅ **YAML Effect Definitions** - Proper steps-based structure with hot-reload capability
 - ✅ **Configuration System** - YAML configuration with environment variables
 - ✅ **MIDI Integration** - JZZ library with mock controllers
 - ✅ **DMX Support** - Real and mock DMX controller implementations
 - ✅ **Beat Detection** - MIDI clock synchronization system
+- ✅ **Philips Hue Integration** - Complete Entertainment API with light targeting
 - ✅ **Test Suite** - Comprehensive DI container and service validation
 - ✅ **Documentation** - Complete API documentation and architecture guides
 
@@ -109,6 +114,8 @@
 ### Code Quality
 - ✅ **Architecture Consistency** - Fixed duplicate TYPES constants and configuration interfaces
 - ✅ **Code Deduplication** - Removed duplicate repository files and cleaned up structure
+- ✅ **Legacy Code Removal** - Eliminated old effect engine implementations and outdated interfaces
+- ✅ **Clean Architecture Refactoring** - Proper separation of Domain/Application/Infrastructure layers
 - 🔄 Add comprehensive unit tests for all domain services
 - 🔄 Implement integration tests for hardware controllers
 - 🔄 Add end-to-end tests for complete user workflows

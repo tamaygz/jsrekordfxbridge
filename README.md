@@ -18,7 +18,7 @@ JSRekordFXBridge is a professional DJ lighting control system that synchronizes 
 
 ## 🏛️ Architecture
 
-The system follows Domain-Driven Design (DDD) with clean architecture:
+The system follows Domain-Driven Design (DDD) with clean architecture principles:
 
 ```
 src/
@@ -30,18 +30,25 @@ src/
 │   ├── lighting/       # Light controller interfaces & models
 │   ├── dmx/           # DMX controller interfaces & models
 │   ├── midi/          # MIDI controller interfaces & models
-│   ├── effects/       # Effect domain models & repositories
+│   ├── effects/       # Effect domain models & interfaces
+│   │   ├── effect.ts           # Core effect entities
+│   │   ├── effect-engine.ts    # Business orchestration interface
+│   │   ├── effect-executor.ts  # Hardware execution interface
+│   │   └── effect-repository.ts # Persistence interface
 │   ├── shows/         # Show orchestration & cue management
 │   ├── beat/          # Beat detection & timing services
 │   └── configuration/ # System configuration models
 ├── application/        # Use cases & application services
 │   ├── orchestration-service.ts # Main system orchestrator
-│   └── effects/       # Effect engine implementation
+│   └── effects/       # Effect engine business logic
+│       └── effect-engine.service.ts # Effect orchestration implementation
 ├── infrastructure/     # External dependencies & implementations
 │   ├── lighting/      # Hue & mock light controllers
 │   ├── dmx/          # Real & mock DMX implementations
 │   ├── midi/         # JZZ & mock MIDI implementations
-│   ├── effects/      # File-based effect repository
+│   ├── effects/      # Effect infrastructure implementations
+│   │   ├── file-effect-repository.ts    # YAML file-based persistence
+│   │   └── hardware-effect-executor.ts  # Hardware command execution
 │   ├── configuration/ # YAML configuration service
 │   ├── shows/        # YAML show service
 │   ├── beat/         # MIDI clock beat detection
@@ -49,6 +56,57 @@ src/
 └── interfaces/         # User interfaces
     └── cli/           # Command line interfaces
 ```
+
+### Clean Architecture Principles
+
+The system implements proper **separation of concerns** with clear dependencies:
+
+- **Domain Layer**: Pure business logic and entities (no dependencies)
+- **Application Layer**: Use cases and orchestration (depends only on Domain)
+- **Infrastructure Layer**: External integrations and hardware (depends on Domain & Application)
+- **Interface Layer**: User interfaces (depends on Application)
+
+#### Effect System Architecture Example
+
+The effect system demonstrates clean architecture principles:
+
+```typescript
+// Domain Layer - Pure interfaces and entities
+interface EffectEngine {
+  triggerEffect(id: EffectId): Promise<EffectExecution>
+  executeEffectWithIntensity(effect: Effect, intensity: number): Promise<void>
+}
+
+interface EffectExecutor {
+  executeStep(step: EffectStep, context: EffectExecutionContext): Promise<void>
+}
+
+// Application Layer - Business logic implementation
+@injectable()
+class EffectEngineService implements EffectEngine {
+  constructor(
+    @inject(TYPES.EffectRepository) private repository: EffectRepository,
+    @inject(TYPES.EffectExecutor) private executor: EffectExecutor
+  ) {}
+  // Business orchestration, execution tracking, beat sync
+}
+
+// Infrastructure Layer - Hardware implementation
+@injectable() 
+class HardwareEffectExecutor implements EffectExecutor {
+  constructor(
+    @inject(TYPES.LightController) private lights: ILightController,
+    @inject(TYPES.DMXController) private dmx: DMXController
+  ) {}
+  // Actual hardware command generation and execution
+}
+```
+
+This ensures:
+- **Testability**: Easy to mock dependencies for unit testing
+- **Flexibility**: Swap implementations without changing business logic  
+- **Maintainability**: Changes to hardware don't affect business rules
+- **Single Responsibility**: Each layer has one clear purpose
 
 ## 🚀 Quick Start
 
@@ -339,42 +397,77 @@ await bridge.stop();## File Structure
 
 ```
 
-## � Effects System
+## 🎨 Effects System
 
-Effects are defined in YAML files in the `effects/` directory. The system includes several built-in effects:
+The effect system follows clean architecture with proper separation between business logic and hardware execution:
+
+### Architecture
+
+- **EffectEngine** (Domain): Business orchestration interface for effect lifecycle
+- **EffectExecutor** (Domain): Hardware execution interface for command generation
+- **EffectRepository** (Domain): Persistence interface for effect storage
+- **EffectEngineService** (Application): Business logic implementation with execution tracking
+- **HardwareEffectExecutor** (Infrastructure): Hardware command generation and execution
+- **FileEffectRepository** (Infrastructure): YAML-based effect storage
 
 ### Available Effects
 
-- **`strobo.yaml`** - High-intensity strobe effect
-- **`sweep.yaml`** - Color sweep across lights
+- **`strobo.yaml`** - High-intensity white strobe effect
+- **`sweep.yaml`** - Color sweep across lights  
 - **`red_suspense.yaml`** - Red suspense lighting
 - **`blackout.yaml`** - Turn off all lights
 
-### Example Effect: `effects/strobo.yaml`
+### Effect Definition Format
+
+Effects are defined using YAML with a `steps` structure:
 
 ```yaml
-# Example strobo effect YAML
+# effects/strobo.yaml
 name: strobo
-type: generic
-params:
-  color: [255,255,255]
-  frequency_hz: 10
-  duration_ms: 2000
-pattern:
-  - action: pulse
-    target: all
-    params:
-      intensity: 254
-      duration: 10
-    repeat: true
+description: "Strobe effect with white flashing lights"
+steps:
+  - action:
+      type: pulse
+      color: { r: 255, g: 255, b: 255 }
+      intensity: 1.0
+    duration: 100
+    target:
+      type: all
+      selector: all
+  - action:
+      type: fade
+      color: { r: 0, g: 0, b: 0 }
+      intensity: 0.0
+    duration: 100
+    target:
+      type: all
+      selector: all
 ```
+
+### Effect Execution Flow
+
+1. **Trigger**: `bridge.triggerEffect("strobo")` via orchestration service
+2. **Repository**: Load effect definition from YAML file
+3. **Engine**: Business logic processes steps with intensity scaling
+4. **Executor**: Generate hardware commands for lights/DMX
+5. **Hardware**: Send commands to actual devices (Hue, DMX, etc.)
 
 ### Creating Custom Effects
 
 1. Create a new YAML file in the `effects/` directory
-2. Define the effect structure following the schema
-3. The system automatically reloads effects when files change
+2. Define `steps` with `action`, `duration`, and `target` properties
+3. The system automatically reloads effects when files change (hot reload)
 4. Use via: `await bridge.triggerEffect('your_effect_name')`
+
+### Effect Features
+
+- **Clean Architecture**: Proper separation between business logic and hardware execution
+- **Hot Reload**: Effects automatically reload when YAML files change
+- **Intensity Scaling**: Master brightness and per-effect intensity control
+- **Beat Synchronization**: Effects can respond to beat detection
+- **Hardware Abstraction**: Same effects work with different hardware implementations
+- **Execution Tracking**: Monitor running effects and stop them programmatically
+- **Single Responsibility**: Each service has one clear purpose (orchestration, execution, persistence)
 
 ## 🔌 Hardware Integration
 
@@ -398,20 +491,34 @@ All hardware has comprehensive mock implementations for development:
 
 ### Core Entities
 
-- **`Effect`** - Lighting sequences with steps, parameters, and metadata
+- **`Effect`** - Complete lighting sequences with steps, parameters, and metadata  
+- **`EffectStep`** - Individual effect actions with duration and targeting
+- **`EffectAction`** - Specific light commands (fade, pulse, sweep, etc.)
+- **`EffectExecution`** - Runtime tracking of effect execution state
 - **`Show`** - Collections of effects with cues and beat-synchronized triggers
 - **`LightDevice`** - Individual controllable lights with capabilities and state
 - **`DMXDevice`** - DMX fixtures with channel mappings and capabilities
 - **`MIDIDevice`** - MIDI controllers and interfaces with mapping configuration
 
+### Domain Interfaces
+
+- **`EffectEngine`** - Business orchestration interface for effect lifecycle management
+- **`EffectExecutor`** - Hardware execution interface for command generation and sending
+- **`EffectRepository`** - Persistence interface for effect storage and retrieval
+- **`LightController`** - Hardware abstraction for lighting devices
+- **`DMXController`** - Hardware abstraction for DMX fixtures
+- **`MIDIController`** - Hardware abstraction for MIDI devices
+
 ### Value Objects
 
 - **`Color`** - RGB color values (0-255)
 - **`Position`** - 3D spatial coordinates for light placement
-- **`Intensity`** - Light brightness levels (0-1)
+- **`Intensity`** - Light brightness levels (0-1 normalized)
 - **`BeatPosition`** - Musical timing information (beat, measure, downbeat)
 - **`BPM`** - Beats per minute for tempo synchronization
-- **`TimeRange`** - Duration specifications for effects
+- **`TimeRange`** - Duration specifications for effects and timing
+- **`EffectId`** - Unique identifier for effects
+- **`LightId`** - Unique identifier for individual lights
 
 ## 🏗️ Extending the System
 
@@ -521,22 +628,27 @@ See `tests/README.md` for detailed documentation of each test file.
 
 ### ✅ Implemented Features
 
-- **TypeScript Architecture** - Full DDD with dependency injection
-- **Demo Mode** - Complete mock implementation for development
-- **Effect System** - YAML-based effect definitions with hot reload
-- **MIDI Integration** - JZZ library with mock controllers
-- **DMX Support** - Real and mock DMX controllers
-- **Configuration System** - YAML-based with environment variables
-- **Beat Detection** - MIDI clock synchronization
-- **Interactive API** - Global bridge object for live interaction
-- **Test Suite** - Comprehensive DI container and service tests
+- **Clean Architecture** - Complete DDD implementation with proper separation of concerns
+- **Effect System** - Clean architecture with Domain/Application/Infrastructure layers
+  - Domain interfaces: `EffectEngine`, `EffectExecutor`, `EffectRepository` 
+  - Application service: Business logic with execution tracking
+  - Infrastructure: Hardware execution and YAML file persistence
+- **Philips Hue Integration** - Full Entertainment API with light targeting
+- **TypeScript Architecture** - Strict typing with InversifyJS dependency injection
+- **Demo Mode** - Complete mock implementation for hardware-free development
+- **YAML Effect Definitions** - Hot reload with proper steps-based structure
+- **MIDI Integration** - JZZ library with mock controllers for development
+- **DMX Support** - Real and mock DMX controllers with fixture management
+- **Configuration System** - Environment-based YAML configuration
+- **Beat Detection** - MIDI clock synchronization with beat-responsive effects
+- **Interactive API** - Global bridge object for live interaction and testing
+- **Comprehensive Testing** - DI container validation and service resolution tests
 
 ### 🚧 In Progress
 
-- [ ] **Real Hue Entertainment** - Physical Philips Hue integration
-- [ ] **Audio Analysis** - Beat detection from audio input
-- [ ] **Show Sequencing** - Advanced cue and timeline management
-- [ ] **Web Interface** - Browser-based control panel
+- [ ] **Audio Analysis** - Beat detection from audio input using Web Audio API
+- [ ] **Show Sequencing** - Advanced cue and timeline management with beat sync
+- [ ] **Web Interface** - Browser-based control panel with real-time feedback
 
 ### 🔮 Future Roadmap
 
