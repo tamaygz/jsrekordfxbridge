@@ -9,8 +9,9 @@ JSRekordFXBridge is a professional DJ lighting control system that synchronizes 
 ### Key Features
 
 - **🎵 Beat-Synced Lighting** - Real-time synchronization with MIDI clock or audio analysis
+- **🎚️ Rekordbox Integration** - Direct connection to rekordbox DJ software with multi-channel BPM tracking
 - **🎨 YAML Effect Definitions** - Easy-to-create lighting effects using human-readable YAML
-- **🎛️ Multi-Hardware Support** - Philips Hue, DMX fixtures, and MIDI controllers
+- **🎛️ Multi-Hardware Support** - Philips Hue, DMX fixtures, MIDI controllers, and rekordbox
 - **🏗️ Enterprise Architecture** - Domain-Driven Design with dependency injection
 - **🎭 Demo Mode** - Full mock implementation for development without hardware
 - **⚡ Real-time Performance** - Low-latency lighting control for live performances
@@ -30,6 +31,7 @@ src/
 │   ├── lighting/       # Light controller interfaces & models
 │   ├── dmx/           # DMX controller interfaces & models
 │   ├── midi/          # MIDI controller interfaces & models
+│   ├── rekordbox/     # Rekordbox controller interfaces & models
 │   ├── effects/       # Effect domain models & interfaces
 │   │   ├── effect.ts           # Core effect entities
 │   │   ├── effect-engine.ts    # Business orchestration interface
@@ -46,6 +48,7 @@ src/
 │   ├── lighting/      # Hue & mock light controllers
 │   ├── dmx/          # Real & mock DMX implementations
 │   ├── midi/         # JZZ & mock MIDI implementations
+│   ├── rekordbox/    # Real & mock rekordbox implementations
 │   ├── effects/      # Effect infrastructure implementations
 │   │   ├── file-effect-repository.ts    # YAML file-based persistence
 │   │   └── hardware-effect-executor.ts  # Hardware command execution
@@ -476,7 +479,28 @@ steps:
 - **Lighting**: Philips Hue Entertainment, Mock controllers
 - **DMX**: EnTTec DMX interfaces, Mock DMX universe
 - **MIDI**: Any MIDI controller (optimized for DDJ-400), JZZ MIDI library
-- **Beat Detection**: MIDI clock synchronization, configurable BPM
+- **Rekordbox**: Direct integration via MIDI for multi-channel BPM and beat sync
+- **Beat Detection**: MIDI clock synchronization, rekordbox BPM tracking, configurable BPM
+
+### Rekordbox Integration
+
+The system can connect directly to rekordbox DJ software to:
+
+- **Track Multiple Channels** - Monitor BPM and playback state of all 4 decks
+- **Auto-Sync BPM** - Automatically sync lighting effects to the active deck's BPM
+- **Channel Detection** - Detect which channel is currently playing (master channel)
+- **Beat Synchronization** - React to beats from the active channel in real-time
+- **Multi-Deck Support** - Switch lighting between different channels seamlessly
+
+**Setup:**
+1. Enable MIDI Clock output in rekordbox preferences
+2. Configure the virtual port name in `config/default-config.yaml`:
+   ```yaml
+   rekordbox:
+     use_midi_clock: true
+     virtual_port: "rekordbox-out"
+   ```
+3. Start the system - it will automatically connect to rekordbox
 
 ### Mock Implementations
 
@@ -485,6 +509,7 @@ All hardware has comprehensive mock implementations for development:
 - **`MockLightController`** - Simulates Hue Entertainment lights with console output
 - **`MockDMXController`** - Simulates DMX universe with channel tracking
 - **`MockMIDIController`** - Simulates MIDI devices with beat generation
+- **`MockRekordboxController`** - Simulates rekordbox with channel states and BPM changes
 - **Demo Mode** - Automatically activated when hardware credentials are missing
 
 ## 🏗️ Domain Models
@@ -499,6 +524,7 @@ All hardware has comprehensive mock implementations for development:
 - **`LightDevice`** - Individual controllable lights with capabilities and state
 - **`DMXDevice`** - DMX fixtures with channel mappings and capabilities
 - **`MIDIDevice`** - MIDI controllers and interfaces with mapping configuration
+- **`RekordboxChannel`** - Individual DJ deck/channel with BPM and playback state
 
 ### Domain Interfaces
 
@@ -508,6 +534,7 @@ All hardware has comprehensive mock implementations for development:
 - **`LightController`** - Hardware abstraction for lighting devices
 - **`DMXController`** - Hardware abstraction for DMX fixtures
 - **`MIDIController`** - Hardware abstraction for MIDI devices
+- **`RekordboxController`** - Hardware abstraction for rekordbox DJ software integration
 
 ### Value Objects
 
@@ -639,6 +666,11 @@ See `tests/README.md` for detailed documentation of each test file.
 - **YAML Effect Definitions** - Hot reload with proper steps-based structure
 - **MIDI Integration** - JZZ library with mock controllers for development
 - **DMX Support** - Real and mock DMX controllers with fixture management
+- **Rekordbox Integration** - Multi-channel BPM tracking and automatic beat sync
+  - Track all 4 channels independently with playback state
+  - Auto-sync lighting to active channel's BPM
+  - React to beats from different decks
+  - Seamless channel switching
 - **Configuration System** - Environment-based YAML configuration
 - **Beat Detection** - MIDI clock synchronization with beat-responsive effects
 - **Interactive API** - Global bridge object for live interaction and testing
