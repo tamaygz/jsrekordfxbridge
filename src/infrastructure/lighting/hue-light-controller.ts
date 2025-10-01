@@ -13,8 +13,9 @@ import type { LightId, Color, Intensity } from '../../types/domain/lighting.js';
 import type { Position } from '../../types/domain/devices.js';
 
 interface HueConnectionConfig {
-  readonly bridgeId: string;
+  readonly bridgeIp: string;
   readonly username: string;
+  readonly clientKey?: string;
   readonly entertainmentGroupId?: string;
   readonly discoveryTimeout?: number;
 }
@@ -41,12 +42,12 @@ export class HueLightController extends LightController {
   }
 
   async connect(): Promise<void> {
-    if (!this.config.bridgeId || !this.config.username) {
-      throw new Error('Hue bridge ID and username required. Set HUE_BRIDGE_ID and HUE_USERNAME environment variables.');
+    if (!this.config.bridgeIp || !this.config.username) {
+      throw new Error('Hue bridge IP and username required. Set HUE_BRIDGE_IP and HUE_USERNAME environment variables.');
     }
 
     try {
-      console.log('🌉 Hue: Connecting to bridge...', this.config.bridgeId);
+      console.log('🌉 Hue: Connecting to bridge...', this.config.bridgeIp);
       
       // Dynamically import node-hue-api to handle ES module issues
       if (!v3) {
@@ -55,7 +56,7 @@ export class HueLightController extends LightController {
       }
       
       // Connect to Hue Bridge
-      this.api = await v3.api.createLocal(this.config.bridgeId).connect(this.config.username);
+      this.api = await v3.api.createLocal(this.config.bridgeIp).connect(this.config.username);
       console.log('🌉 Hue: Connected to bridge successfully');
 
       // Discover and map lights
@@ -423,22 +424,25 @@ export class HueLightController extends LightController {
 
 // Factory function for easy DI container configuration
 export function createHueLightController(config: {
-  bridgeId?: string;
+  bridgeIp?: string;
   username?: string;
+  clientKey?: string;
   entertainmentGroupId?: string;
 }): HueLightController {
-  const bridgeId = config.bridgeId || process.env.HUE_BRIDGE_ID;
+  const bridgeIp = config.bridgeIp || process.env.HUE_BRIDGE_IP;
   const username = config.username || process.env.HUE_USERNAME;
-  const entertainmentGroupId = config.entertainmentGroupId || process.env.HUE_ENTERTAINMENT_ID;
+  const clientKey = config.clientKey || process.env.HUE_CLIENT_KEY;
+  const entertainmentGroupId = config.entertainmentGroupId || process.env.HUE_ENTERTAINMENT_GROUP_ID;
 
-  if (!bridgeId || !username) {
-    throw new Error('HUE_BRIDGE_ID and HUE_USERNAME environment variables are required');
+  if (!bridgeIp || !username) {
+    throw new Error('HUE_BRIDGE_IP and HUE_USERNAME environment variables are required');
   }
 
   const connectionConfig: HueConnectionConfig = {
-    bridgeId,
+    bridgeIp,
     username,
     discoveryTimeout: 5000,
+    ...(clientKey && { clientKey }),
     ...(entertainmentGroupId && { entertainmentGroupId })
   };
 
