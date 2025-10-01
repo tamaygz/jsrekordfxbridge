@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
 // Dynamic import to handle ES module compatibility issues with node-hue-api
-let v3: any;
+let hueApi: any;
 import { 
   LightController, 
   type LightDevice, 
@@ -50,13 +50,13 @@ export class HueLightController extends LightController {
       console.log('🌉 Hue: Connecting to bridge...', this.config.bridgeIp);
       
       // Dynamically import node-hue-api to handle ES module issues
-      if (!v3) {
-        const hueApi = await import('node-hue-api');
-        v3 = hueApi.v3;
+      if (!hueApi) {
+        const hueApiModule = await import('node-hue-api');
+        hueApi = hueApiModule;
       }
       
       // Connect to Hue Bridge
-      this.api = await v3.api.createLocal(this.config.bridgeIp).connect(this.config.username);
+      this.api = await hueApi.api.createLocal(this.config.bridgeIp).connect(this.config.username);
       console.log('🌉 Hue: Connected to bridge successfully');
 
       // Discover and map lights
@@ -269,12 +269,12 @@ export class HueLightController extends LightController {
     const promises = commands.map(async (command) => {
       try {
         const lightId = this.parseIntId(command.lightId);
-        if (!v3) {
-          const hueApi = await import('node-hue-api');
-          v3 = hueApi.v3;
+        if (!hueApi) {
+          const hueApiModule = await import('node-hue-api');
+          hueApi = hueApiModule;
         }
         
-        const lightState = new v3.model.lightStates.LightState()
+        const lightState = new hueApi.lightStates.LightState()
           .on()
           .rgb(
             Math.round(command.state.color.r),
