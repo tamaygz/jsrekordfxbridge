@@ -13,6 +13,7 @@
         "demo-cli": "tsx src/interfaces/cli/demo-cli.ts",
         "setup-hue": "tsx setup-hue.js",
         "generate-env": "node generate-env.js",
+        "cleanup-env": "node cleanup-env.js",
         "clean": "rm -rf dist",
         "lint": "eslint src --ext .ts",
         "type-check": "tsc --noEmit"

@@ -156,8 +156,30 @@ export class HueSetupCLI {
         console.log('📝 Updating existing .env file...');
         const existingEnv = fs.readFileSync(this.envPath, 'utf8');
         
-        // Simple approach: append new config with a separator
-        const updatedEnv = existingEnv + '\n\n# === Hue Configuration (Generated) ===\n' + fullConfig;
+        // Parse the generated config to get key-value pairs
+        const configLines = fullConfig.split('\n').filter(line => 
+          line.trim() && !line.trim().startsWith('#')
+        );
+        
+        let updatedEnv = existingEnv;
+        
+        // Update each configuration value in the existing file
+        for (const line of configLines) {
+          const [key, value] = line.split('=', 2);
+          if (key && value !== undefined) {
+            const keyRegex = new RegExp(`^${key.trim()}=.*$`, 'm');
+            if (keyRegex.test(updatedEnv)) {
+              // Replace existing key
+              updatedEnv = updatedEnv.replace(keyRegex, `${key.trim()}=${value.trim()}`);
+              console.log(`  ✅ Updated ${key.trim()}`);
+            } else {
+              // Add new key at the end
+              updatedEnv += `\n${key.trim()}=${value.trim()}`;
+              console.log(`  ➕ Added ${key.trim()}`);
+            }
+          }
+        }
+        
         fs.writeFileSync(this.envPath, updatedEnv);
       } else {
         console.log('📝 Creating new .env file...');
