@@ -72,6 +72,13 @@ export interface MIDIMapping {
   readonly action: string;
 }
 
+export interface BeatConfiguration {
+  readonly threshold: number;
+  readonly windowSize: number;
+  readonly minInterval: number;
+  readonly decay: number;
+}
+
 export interface EffectsConfiguration {
   readonly directory?: string;
   readonly autoload?: boolean;

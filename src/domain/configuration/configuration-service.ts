@@ -3,7 +3,8 @@ import type {
   HueConfiguration,
   DMXConfiguration,
   MIDIConfiguration,
-  EffectsConfiguration
+  EffectsConfiguration,
+  BeatConfiguration
 } from './config.js';
 
 // Re-export for convenience
@@ -11,7 +12,8 @@ export type {
   HueConfiguration,
   DMXConfiguration,
   MIDIConfiguration,
-  EffectsConfiguration as EffectConfiguration
+  EffectsConfiguration as EffectConfiguration,
+  BeatConfiguration
 } from './config.js';
 
 // Simple Configuration interface that matches FileConfigurationService usage
@@ -21,14 +23,6 @@ export interface Configuration {
   readonly midi: MIDIConfiguration;
   readonly beat: BeatConfiguration;
   readonly effects: EffectsConfiguration;
-}
-
-// Add specific interfaces needed by FileConfigurationService
-export interface BeatConfiguration {
-  readonly threshold: number;
-  readonly windowSize: number;
-  readonly minInterval: number;
-  readonly decay: number;
 }
 
 export interface ConfigurationService {
