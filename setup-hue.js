@@ -84,9 +84,11 @@ async function main() {
 function printHelp() {
   console.log('\n🌈 JSRekordFXBridge - Hue Setup Tool\n');
   console.log('Usage:');
-  console.log('  npm run setup-hue           # Run complete setup process');
-  console.log('  npm run setup-hue validate  # Test existing configuration');  
-  console.log('  npm run setup-hue help      # Show this help message');
+  console.log('  npm run setup-hue                # Run complete setup process');
+  console.log('  npm run setup-hue 192.168.1.3    # Manual setup with specific IP');
+  console.log('  npm run setup-hue validate       # Test existing configuration');  
+  console.log('  npm run setup-hue help           # Show this help message');
+  console.log('  npm run generate-env             # Create up-to-date .env file');
   console.log('');
   console.log('The setup process will:');
   console.log('  1. 🔍 Discover Hue bridges on your network');
@@ -99,6 +101,11 @@ function printHelp() {
   console.log('  • Philips Hue bridge connected to your network');
   console.log('  • Bridge set up via the official Hue app');
   console.log('  • This computer on the same network as the bridge');
+  console.log('');
+  console.log('Pro tips:');
+  console.log('  • Run "npm run generate-env" first to create a clean .env file');
+  console.log('  • Use the manual IP option if discovery finds wrong bridge');
+  console.log('  • Press the physical link button on your bridge when prompted');
   console.log('');
 }
 
