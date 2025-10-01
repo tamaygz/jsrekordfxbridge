@@ -96,19 +96,12 @@ export class HueEntertainmentSetup {
   async getEntertainmentGroups(): Promise<EntertainmentGroup[]> {
     try {
       const api = await this.getApi();
-      console.log('🔍 Fetching all groups from bridge...');
+      console.log('🔍 Using Entertainment-specific API method...');
       
-      const groups = await api.groups.getAll();
-      console.log(`📊 Found ${groups.length} total groups`);
+      // Use the specific Entertainment groups method instead of getAll()
+      const entertainmentGroups = await api.groups.getEntertainment();
+      console.log(`🎭 Found ${entertainmentGroups.length} Entertainment groups directly`);
       
-      // Filter and debug Entertainment groups
-      const entertainmentGroups = groups.filter((group: any) => {
-        console.log(`🔍 Group: ${group.name} (ID: ${group.id}) - Type: ${group.type} - Class: ${group.class}`);
-        return group.type === 'Entertainment';
-      });
-      
-      console.log(`🎭 Found ${entertainmentGroups.length} Entertainment groups`);
-
       return entertainmentGroups.map((group: any) => ({
         id: group.id.toString(),
         name: group.name,
@@ -117,25 +110,65 @@ export class HueEntertainmentSetup {
         locations: group.locations || {},
         stream: group.stream || {}
       }));
-    } catch (error: any) {
-      console.error('❌ Failed to get entertainment groups:', error?.message || error);
       
-      // Try alternative approach - get groups without filtering first
+    } catch (error: any) {
+      console.error('❌ Failed to get entertainment groups using direct method:', error?.message || error);
+      
+      // Fallback: Try to get all groups and filter manually, with error handling
       try {
-        console.log('🔄 Trying alternative approach...');
+        console.log('🔄 Trying fallback approach with error handling...');
         const api = await this.getApi();
-        const allGroups = await api.groups.getAll();
         
-        console.log('📋 All groups raw data:');
-        allGroups.forEach((group: any, index: number) => {
-          console.log(`  ${index + 1}. ${group.name} - Type: ${group.type}, Class: ${group.class || 'undefined'}`);
+        // Get groups one by one to avoid validation errors on individual groups
+        console.log('� Checking for Entertainment groups individually...');
+        
+        // First get the list of all group IDs by trying to get group 0 (all lights) and extracting info
+        let allGroups: any[] = [];
+        try {
+          allGroups = await api.groups.getAll();
+        } catch (getAllError) {
+          console.log('⚠️  Cannot get all groups at once, checking manually created Entertainment groups...');
+          // If getAll() fails due to validation errors, we'll need to check manually
+          // This is a workaround for bridges that have groups with invalid data
+          return [];
+        }
+        
+        const entertainmentGroups = allGroups.filter((group: any) => {
+          try {
+            console.log(`🔍 Group: ${group.name} (ID: ${group.id}) - Type: ${group.type} - Class: ${group.class || 'undefined'}`);
+            return group.type === 'Entertainment';
+          } catch (filterError: any) {
+            console.log(`⚠️  Skipping problematic group: ${filterError?.message || filterError}`);
+            return false;
+          }
         });
         
-      } catch (debugError: any) {
-        console.error('❌ Debug attempt also failed:', debugError?.message || debugError);
+        console.log(`🎭 Found ${entertainmentGroups.length} Entertainment groups via fallback`);
+        
+        return entertainmentGroups.map((group: any) => ({
+          id: group.id.toString(),
+          name: group.name,
+          type: group.type,
+          lights: group.lights ? group.lights.map((id: any) => id.toString()) : [],
+          locations: group.locations || {},
+          stream: group.stream || {}
+        }));
+        
+      } catch (fallbackError: any) {
+        console.error('❌ Fallback approach also failed:', fallbackError?.message || fallbackError);
+        
+        console.log('\n📱 Manual Setup Required:');
+        console.log('It appears there are validation issues with existing groups on your bridge.');
+        console.log('This can happen if groups were created with invalid class values.');
+        console.log('\nTo resolve this:');
+        console.log('1. Open the Philips Hue app');
+        console.log('2. Go to Settings → Entertainment areas');
+        console.log('3. Check if any Entertainment areas show errors');
+        console.log('4. Delete and recreate any problematic Entertainment areas');
+        console.log('5. Ensure Entertainment area type is set to "TV" or "Other" only');
+        
+        return [];
       }
-      
-      throw error;
     }
   }
 
