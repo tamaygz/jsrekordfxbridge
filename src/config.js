@@ -12,17 +12,36 @@ class ConfigLoader {
   }
 
   loadConfig() {
+    let config;
     try {
       // Load YAML config file
       const configFile = fs.readFileSync(this.configPath, 'utf8');
-      const config = yaml.parse(configFile);
+      config = yaml.parse(configFile);
       
       // Replace environment variables
-      return this.replaceEnvVars(config);
+      config = this.replaceEnvVars(config);
     } catch (err) {
       console.warn(`Failed to load config from ${this.configPath}:`, err.message);
-      return this.getDefaultConfig();
+      config = {};
     }
+    
+    // Merge with default config to ensure all fields are present
+    const defaultConfig = this.getDefaultConfig();
+    return this.mergeConfig(defaultConfig, config);
+  }
+
+  mergeConfig(defaultConfig, userConfig) {
+    const result = { ...defaultConfig };
+    
+    for (const [key, value] of Object.entries(userConfig)) {
+      if (typeof value === 'object' && !Array.isArray(value) && value !== null) {
+        result[key] = this.mergeConfig(result[key] || {}, value);
+      } else {
+        result[key] = value;
+      }
+    }
+    
+    return result;
   }
 
   replaceEnvVars(obj) {

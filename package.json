@@ -5,7 +5,8 @@
     "main": "src/index.js",
     "scripts": {
         "start": "node src/index.js",
-        "demo": "DEMO_MODE=true node src/index.js"
+        "demo": "DEMO_MODE=true node src/index.js",
+        "demo-cli": "node examples/demo-cli.js"
     },
     "dependencies": {
         "dmx": "^0.25.1",
