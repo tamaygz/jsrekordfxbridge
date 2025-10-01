@@ -11,9 +11,9 @@
         "dev": "tsx src/index.ts",
         "demo": "DEMO_MODE=true tsx src/index.ts",
         "demo-cli": "tsx src/interfaces/cli/demo-cli.ts",
-        "setup-hue": "tsx setup-hue.js",
-        "generate-env": "node generate-env.js",
-        "cleanup-env": "node cleanup-env.js",
+        "setup-hue": "tsx scripts/setup-hue.js",
+        "generate-env": "node scripts/generate-env.js",
+        "cleanup-env": "node scripts/cleanup-env.js",
         "clean": "rm -rf dist",
         "lint": "eslint src --ext .ts",
         "type-check": "tsc --noEmit"

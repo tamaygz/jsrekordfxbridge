@@ -51,7 +51,7 @@ export class DIContainer {
     } else {
       this.container.bind<ILightController>(TYPES.LightController).toDynamicValue(() => {
         return new HueLightController({
-          bridgeId: process.env.HUE_BRIDGE_IP || process.env.HUE_BRIDGE_ID || '',
+          bridgeIp: process.env.HUE_BRIDGE_IP || process.env.HUE_BRIDGE_ID || '',
           username: process.env.HUE_USER_ID || process.env.HUE_USERNAME || '',
           entertainmentGroupId: process.env.HUE_ENTERTAINMENT_GROUP || process.env.HUE_ENTERTAINMENT_ID || ''
         });

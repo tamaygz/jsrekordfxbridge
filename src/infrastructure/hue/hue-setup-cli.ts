@@ -189,7 +189,7 @@ export class HueSetupCLI {
       console.log(`✅ Configuration saved to: ${this.envPath}`);
 
       // Generate a summary config file for reference
-      const summaryPath = path.join(this.projectRoot, 'hue-setup-summary.json');
+      const summaryPath = path.join(this.projectRoot, 'config', 'hue-setup-summary.json');
       const summary = {
         timestamp: new Date().toISOString(),
         bridge: {
@@ -214,6 +214,12 @@ export class HueSetupCLI {
           }))
         } : null
       };
+
+      // Ensure config directory exists
+      const configDir = path.dirname(summaryPath);
+      if (!fs.existsSync(configDir)) {
+        fs.mkdirSync(configDir, { recursive: true });
+      }
 
       fs.writeFileSync(summaryPath, JSON.stringify(summary, null, 2));
       console.log(`📋 Setup summary saved to: ${summaryPath}`);
