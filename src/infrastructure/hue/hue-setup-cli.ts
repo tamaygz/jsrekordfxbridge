@@ -254,6 +254,97 @@ export class HueSetupCLI {
   }
 
   /**
+   * Manual setup with a specific IP address
+   */
+  async setupHueManual(ipAddress: string): Promise<HueSetupResult> {
+    console.log('\n🌈 ===============================');
+    console.log('🎭 JSRekordFXBridge - Manual Hue Setup');
+    console.log('🌈 ===============================\n');
+
+    console.log(`Connecting to Hue bridge at: ${ipAddress}`);
+    console.log('This will help you authenticate and configure Entertainment groups.\n');
+
+    try {
+      // Step 1: Manual Bridge Authentication
+      console.log('🔍 === STEP 1: Bridge Authentication ===\n');
+      
+      const authenticator = new HueBridgeAuthenticator();
+      const authResult = await authenticator.manualSetup(ipAddress);
+      
+      if (!authResult) {
+        return {
+          success: false,
+          error: 'Failed to authenticate with Hue bridge'
+        };
+      }
+
+      const { bridgeInfo, credentials } = authResult;
+
+      // Step 2: Entertainment Group Setup
+      console.log('\n🎭 === STEP 2: Entertainment Groups ===\n');
+      
+      const entertainmentSetup = new HueEntertainmentSetup(
+        ipAddress,
+        credentials.username,
+        credentials.clientKey
+      );
+
+      const entertainmentResult = await entertainmentSetup.interactiveSetup();
+      
+      if (!entertainmentResult) {
+        console.log('⚠️  Warning: Entertainment group setup failed, but bridge authentication succeeded.');
+        console.log('You can manually create Entertainment groups using the Philips Hue app.\n');
+      }
+
+      // Step 3: Test Entertainment Streaming (if available)
+      if (entertainmentResult && credentials.clientKey) {
+        console.log('\n🧪 === STEP 3: Testing Entertainment ===\n');
+        const testSuccess = await entertainmentSetup.testEntertainment(entertainmentResult.group.id);
+        
+        if (testSuccess) {
+          console.log('✅ Entertainment streaming test passed!');
+        } else {
+          console.log('⚠️  Entertainment streaming test failed, but setup can continue.');
+        }
+      }
+
+      // Step 4: Generate Configuration
+      console.log('\n⚙️  === STEP 4: Configuration ===\n');
+      
+      const configGenerated = await this.generateConfiguration(
+        bridgeInfo,
+        credentials,
+        entertainmentResult || undefined
+      );
+
+      // Step 5: Summary
+      console.log('\n🎉 === SETUP COMPLETE ===\n');
+      this.printSetupSummary(bridgeInfo, credentials, entertainmentResult || undefined, configGenerated);
+
+      const result: HueSetupResult = {
+        success: true,
+        bridgeInfo,
+        credentials,
+        configGenerated
+      };
+
+      if (entertainmentResult) {
+        result.entertainmentGroup = entertainmentResult.group;
+        result.lights = entertainmentResult.lights;
+      }
+
+      return result;
+
+    } catch (error: any) {
+      console.error('\n❌ Manual setup failed:', error?.message || error);
+      return {
+        success: false,
+        error: error?.message || 'Unknown setup error'
+      };
+    }
+  }
+
+  /**
    * Validate existing configuration
    */
   async validateSetup(): Promise<boolean> {

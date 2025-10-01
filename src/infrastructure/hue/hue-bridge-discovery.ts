@@ -61,34 +61,44 @@ export class HueBridgeDiscovery {
         console.log(`\n🌉 Checking bridge: ${bridge.ipaddress}`);
         
         try {
-          // Get detailed bridge information
-          const unauthenticatedApi = hueApi.api.createLocal(bridge.ipaddress);
-          const config = await unauthenticatedApi.configuration.getAll();
+          // Get detailed bridge information using direct HTTPS call
+          const response = await fetch(`https://${bridge.ipaddress}/api/nouser/config`, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+            // @ts-ignore - for node environment
+            rejectUnauthorized: false
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          const config = await response.json() as any;
           
           const bridgeInfo: HueBridgeInfo = {
             bridge: {
-              id: config.bridgeid || bridge.config?.bridgeid,
+              id: config.bridgeid,
               name: config.name,
               ipAddress: bridge.ipaddress,
               modelId: config.modelid,
-              factoryNew: config.factorynew,
+              factoryNew: config.factorynew || false,
               replacesBridgeId: config.replacesbridgeid,
               dataStoreVersion: config.datastoreversion,
               starterKitId: config.starterkitid,
               softwareVersion: config.swversion,
               apiVersion: config.apiversion,
               swVersion: config.swversion,
-              localTime: config.localtime,
-              timeZone: config.timezone,
-              portalservices: config.portalservices,
-              linkButton: config.linkbutton,
-              touchLink: config.touchlink,
-              proxyAddress: config.proxyaddress,
-              proxyPort: config.proxyport,
+              localTime: new Date().toISOString(), // Default since not in nouser endpoint
+              timeZone: 'UTC', // Default since not in nouser endpoint
+              portalservices: false, // Default since not in nouser endpoint
+              linkButton: false, // Default since not in nouser endpoint
+              touchLink: false, // Default since not in nouser endpoint
+              ...(config.proxyaddress && { proxyAddress: config.proxyaddress }),
+              ...(config.proxyport && { proxyPort: config.proxyport }),
               mac: config.mac,
-              netmask: config.netmask,
-              gateway: config.gateway,
-              dhcp: config.dhcp
+              netmask: '255.255.255.0', // Default since not in nouser endpoint
+              gateway: '192.168.1.1', // Default since not in nouser endpoint
+              dhcp: true // Default since not in nouser endpoint
             },
             config: config,
             isReachable: true,
@@ -123,7 +133,7 @@ export class HueBridgeDiscovery {
       }
       
       const authenticatedApi = await hueApi.api.createLocal(ipAddress).connect(username);
-      await authenticatedApi.configuration.getAll();
+      await authenticatedApi.configuration.getConfiguration();
       
       // Update bridge info
       const bridgeInfo = this.discoveredBridges.get(ipAddress);

@@ -9,7 +9,12 @@ import { HueSetupCLI } from './src/infrastructure/hue/hue-setup-cli.js';
 
 async function main() {
   const args = process.argv.slice(2);
-  const command = args[0];
+  const firstArg = args[0];
+  
+  // Check if first argument is a command or an IP address
+  const isCommand = ['validate', 'test', 'help', '--help', '-h'].includes(firstArg);
+  const command = isCommand ? firstArg : null;
+  const ipAddress = isCommand ? args[1] : firstArg;
 
   const cli = new HueSetupCLI();
 
@@ -25,25 +30,44 @@ async function main() {
         console.log('❌ Setup validation failed. Please run setup again.');
         process.exit(1);
       }
-    } else if (command === 'help' || command === '--help' || command === '-h') {
+    } else if (command === 'help' || firstArg === '--help' || firstArg === '-h') {
       printHelp();
       process.exit(0);
     } else {
-      // Default: run full setup
-      console.log('🚀 Starting Hue setup process...\n');
-      const result = await cli.setupHue();
-      
-      if (result.success) {
-        console.log('🎉 Setup completed successfully!');
-        console.log('\nNext steps:');
-        console.log('  1. Review your .env file');
-        console.log('  2. Set DEMO_MODE=false');  
-        console.log('  3. Start your application');
-        console.log('  4. Test with: npm run setup-hue validate');
-        process.exit(0);
+      // Check if manual IP was provided
+      if (ipAddress && ipAddress !== 'validate' && ipAddress !== 'help') {
+        console.log(`🚀 Starting manual Hue setup with IP: ${ipAddress}...\n`);
+        const result = await cli.setupHueManual(ipAddress);
+        
+        if (result.success) {
+          console.log('🎉 Manual setup completed successfully!');
+          console.log('\nNext steps:');
+          console.log('  1. Review your .env file');
+          console.log('  2. Set DEMO_MODE=false');  
+          console.log('  3. Start your application');
+          console.log('  4. Test with: npm run setup-hue validate');
+          process.exit(0);
+        } else {
+          console.log(`❌ Manual setup failed: ${result.error}`);
+          process.exit(1);
+        }
       } else {
-        console.log(`❌ Setup failed: ${result.error}`);
-        process.exit(1);
+        // Default: run full setup
+        console.log('🚀 Starting Hue setup process...\n');
+        const result = await cli.setupHue();
+        
+        if (result.success) {
+          console.log('🎉 Setup completed successfully!');
+          console.log('\nNext steps:');
+          console.log('  1. Review your .env file');
+          console.log('  2. Set DEMO_MODE=false');  
+          console.log('  3. Start your application');
+          console.log('  4. Test with: npm run setup-hue validate');
+          process.exit(0);
+        } else {
+          console.log(`❌ Setup failed: ${result.error}`);
+          process.exit(1);
+        }
       }
     }
   } catch (error) {

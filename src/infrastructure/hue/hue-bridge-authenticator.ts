@@ -39,14 +39,8 @@ export class HueBridgeAuthenticator {
       
       console.log(`🔐 Attempting to authenticate with bridge at ${ipAddress}...`);
       
-      const unauthenticatedApi = hueApi.api.createLocal(ipAddress);
+      const unauthenticatedApi = await hueApi.api.createLocal(ipAddress).connect();
       
-      // Create user request
-      const userRequest = {
-        devicetype: `${request.appName}#${request.deviceName}`,
-        ...(request.generateClientKey && { generateclientkey: true })
-      };
-
       const createdUser = await unauthenticatedApi.users.createUser(
         request.appName,
         request.deviceName,
@@ -189,6 +183,8 @@ export class HueBridgeAuthenticator {
       console.log('  • Your Hue bridge is powered on');
       console.log('  • Your computer is on the same network as the bridge');
       console.log('  • The bridge has been set up with the Philips Hue app');
+      console.log('\n💡 Tip: Try running with a manual IP address:');
+      console.log('   npm run setup-hue 192.168.1.222');
       return null;
     }
 
@@ -243,6 +239,81 @@ export class HueBridgeAuthenticator {
 
     return {
       bridgeInfo: selectedBridge,
+      credentials
+    };
+  }
+
+  /**
+   * Manual setup with a specific IP address
+   */
+  async manualSetup(ipAddress: string, appName = 'JSRekordFXBridge', deviceName = 'DJ-Controller'): Promise<{
+    bridgeInfo: HueBridgeInfo;
+    credentials: { username: string; clientKey?: string };
+  } | null> {
+    console.log('\n🌉 === Manual Hue Bridge Setup ===');
+    console.log(`Connecting to bridge at: ${ipAddress}\n`);
+
+    // Create a basic bridge info structure
+    const bridgeInfo: HueBridgeInfo = {
+      bridge: {
+        id: 'manual-' + ipAddress.replace(/\./g, '-'),
+        name: 'Manual Hue Bridge',
+        ipAddress: ipAddress,
+        modelId: 'Unknown',
+        factoryNew: false,
+        dataStoreVersion: '1.0',
+        softwareVersion: 'Unknown',
+        apiVersion: '1.0',
+        swVersion: 'Unknown',
+        localTime: new Date().toISOString(),
+        timeZone: 'UTC',
+        portalservices: false,
+        linkButton: false,
+        touchLink: false,
+        mac: '00:00:00:00:00:00',
+        netmask: '255.255.255.0',
+        gateway: '192.168.1.1',
+        dhcp: true
+      } as any, // Simplified type casting
+      config: {} as any,
+      isReachable: true,
+      isAuthenticated: false,
+      entertainmentGroups: []
+    };
+
+    console.log('📱 Please press the LINK BUTTON on your Hue bridge now!');
+    console.log('⏱️  You have 30 seconds...\n');
+
+    const authResult = await this.waitForLinkButtonAndAuthenticate(
+      ipAddress,
+      {
+        appName,
+        deviceName,
+        generateClientKey: true
+      }
+    );
+
+    if (!authResult.success) {
+      console.log(`\n❌ Authentication failed: ${authResult.error}`);
+      return null;
+    }
+
+    console.log('\n🎉 Authentication successful!');
+    console.log(`👤 Username: ${authResult.username}`);
+    if (authResult.clientKey) {
+      console.log(`🔑 Client Key: ${authResult.clientKey}`);
+    }
+
+    const credentials: { username: string; clientKey?: string } = {
+      username: authResult.username!
+    };
+    
+    if (authResult.clientKey) {
+      credentials.clientKey = authResult.clientKey;
+    }
+
+    return {
+      bridgeInfo,
       credentials
     };
   }
