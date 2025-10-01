@@ -11,6 +11,7 @@ import {
 } from '../../domain/lighting/light-controller.js';
 import type { LightId, Color, Intensity } from '../../types/domain/lighting.js';
 import type { Position } from '../../types/domain/devices.js';
+import { HueDtlsStreamController, type ColorUpdate } from './hue-dtls-stream.js';
 
 interface HueConnectionConfig {
   readonly bridgeIp: string;
@@ -31,11 +32,12 @@ interface HueLightInfo {
 @injectable()
 export class HueLightController extends LightController {
   private api: any = null;
-  private streamingClient: any = null;
+  private streamingClient: HueDtlsStreamController | null = null;
   private devices: LightDevice[] = [];
   private lightOrder: number[] = [];
   private connected = false;
   private streaming = false;
+  private streamingSetupAttempted = false;
 
   constructor(private config: HueConnectionConfig) {
     super();
@@ -54,8 +56,8 @@ export class HueLightController extends LightController {
         hueApi = await import('node-hue-api');
       }
       
-      // Connect to Hue Bridge
-      this.api = await hueApi.v3.api.createLocal(this.config.bridgeIp).connect(this.config.username);
+      // Connect to Hue Bridge with client key for Entertainment API
+      this.api = await hueApi.v3.api.createLocal(this.config.bridgeIp).connect(this.config.username, this.config.clientKey);
       console.log('🌉 Hue: Connected to bridge successfully');
 
       // Discover and map lights
@@ -79,17 +81,14 @@ export class HueLightController extends LightController {
     console.log('🌉 Hue: Disconnecting...');
     
     // Stop entertainment streaming if active
-    if (this.streaming && this.api) {
+    if (this.streaming) {
       try {
-        console.log('🌉 Hue: Stopping entertainment streaming...');
-        await this.api.groups.disableStreaming(this.config.entertainmentGroupId);
-        console.log('🌉 Hue: Entertainment streaming stopped');
+        await this.stopEntertainmentStream();
       } catch (error) {
-        console.warn('🌉 Hue: Error stopping entertainment streaming:', error);
+        console.warn('🌉 Hue: Error stopping entertainment streaming during disconnect:', error);
       }
     }
 
-    this.streaming = false;
     this.connected = false;
     this.api = null;
     
@@ -109,9 +108,14 @@ export class HueLightController extends LightController {
       throw new Error('Hue controller not connected');
     }
 
-    // For now, always use REST API since DTLS streaming is not fully implemented
-    // The Entertainment group can still be enabled for faster response times
-    await this.sendRestCommands(commands);
+    if (this.streaming) {
+      // Use Entertainment streaming for real-time performance
+      // This works with both DTLS and REST modes when Entertainment streaming is active
+      await this.sendStreamingCommands(commands);
+    } else {
+      // Fall back to individual light REST API calls
+      await this.sendRestCommands(commands);
+    }
   }
 
   async setLight(lightId: LightId, color: Color, intensity?: Intensity): Promise<void> {
@@ -214,6 +218,14 @@ export class HueLightController extends LightController {
       throw new Error('Hue API not connected');
     }
 
+    // Prevent multiple streaming setup attempts
+    if (this.streamingSetupAttempted) {
+      console.log('🌉 Hue: Entertainment streaming setup already attempted');
+      return;
+    }
+
+    this.streamingSetupAttempted = true;
+
     try {
       // Check if we have the required client key for streaming
       if (!this.config.clientKey) {
@@ -221,9 +233,10 @@ export class HueLightController extends LightController {
         return;
       }
 
-      console.log('🌉 Hue: Starting entertainment streaming...');
+      console.log('🌉 Hue: Starting DTLS entertainment streaming...');
       
-      // Enable streaming on the Entertainment group
+      // Enable streaming on the Entertainment group first
+      console.log('🌉 Hue: Enabling Entertainment streaming on group...');
       const streamingEnabled = await this.api.groups.enableStreaming(this.config.entertainmentGroupId);
       
       if (!streamingEnabled) {
@@ -231,14 +244,39 @@ export class HueLightController extends LightController {
         return;
       }
 
-      console.log('🌉 Hue: Entertainment streaming enabled successfully!');
-      
-      // For now, we'll use REST API mode since full DTLS streaming requires additional setup
-      // The Entertainment group is enabled for streaming but we'll send commands via REST
-      this.streaming = false; // Set to false to use REST mode for now
-      this.streamingClient = null;
-      
-      console.log('🌉 Hue: Entertainment group enabled, using REST API for commands');
+      // Wait for the bridge to enable streaming mode (3 seconds as per working implementations)
+      console.log('🌉 Hue: Waiting for bridge to enable streaming...');
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // Create DTLS streaming client
+      console.log('🌉 Hue: Creating DTLS streaming connection...');
+      this.streamingClient = new HueDtlsStreamController(
+        this.config.bridgeIp, 
+        this.config.username, 
+        this.config.clientKey
+      );
+
+      // Connect to the streaming endpoint
+      try {
+        await this.streamingClient.connect();
+        console.log('🌉 Hue: DTLS Entertainment streaming connected successfully!');
+        this.streaming = true;
+      } catch (error) {
+        console.warn('🌉 Hue: Failed to connect DTLS streaming, using REST mode:', error instanceof Error ? error.message : error);
+        if (this.streamingClient) {
+          try {
+            await this.streamingClient.close();
+          } catch (closeError) {
+            // Ignore close errors
+          }
+        }
+        this.streamingClient = null;
+        
+        // Even though DTLS failed, Entertainment streaming is still enabled on the bridge
+        // We can use REST mode for Entertainment streaming
+        this.streaming = true;
+        console.log('🌉 Hue: Entertainment streaming active in REST mode');
+      }
       
     } catch (error) {
       console.warn('🌉 Hue: Failed to start entertainment streaming, falling back to REST:', error);
@@ -248,25 +286,119 @@ export class HueLightController extends LightController {
   }
 
   private async sendStreamingCommands(commands: LightCommand[]): Promise<void> {
+    if (this.streamingClient) {
+      // Use DTLS streaming when available
+      await this.sendDtlsStreamingCommands(commands);
+    } else {
+      // Fall back to optimized REST commands for Entertainment streaming
+      await this.sendRestEntertainmentCommands(commands);
+    }
+  }
+
+  private async sendDtlsStreamingCommands(commands: LightCommand[]): Promise<void> {
     if (!this.streamingClient) return;
 
     try {
-      const frame = commands.map(command => {
-        // Convert 0-1 intensity to 0-255 brightness for streaming (0 means off)
-        const brightness = Math.round(command.state.intensity.value * 255);
-        return {
-          lightId: this.parseIntId(command.lightId),
-          r: Math.round(command.state.color.r),
-          g: Math.round(command.state.color.g),
-          b: Math.round(command.state.color.b),
-          brightness
-        };
-      });
+      // Convert commands to Entertainment API RGB format
+      const rgbData: { [key: number]: [number, number, number] } = {};
+      
+      for (const command of commands) {
+        const lightId = this.parseIntId(command.lightId);
+        const intensity = command.state.intensity.value;
+        
+        if (intensity === 0) {
+          // For zero intensity, send black (off)
+          rgbData[lightId] = [0, 0, 0];
+        } else {
+          // Apply intensity to RGB values (intensity is 0-254, normalize to 0-1)
+          const normalizedIntensity = intensity / 254;
+          rgbData[lightId] = [
+            Math.round(command.state.color.r * normalizedIntensity),
+            Math.round(command.state.color.g * normalizedIntensity),
+            Math.round(command.state.color.b * normalizedIntensity)
+          ];
+        }
+      }
 
-      this.streamingClient.setLights(frame);
+      // Convert to ColorUpdate format for DTLS streaming
+      const colorUpdates: ColorUpdate[] = Object.entries(rgbData).map(([lightId, color]) => ({
+        lightId: parseInt(lightId, 10),
+        color: [
+          Math.min(65535, Math.max(0, color[0] * 257)), // Convert 8-bit to 16-bit
+          Math.min(65535, Math.max(0, color[1] * 257)),
+          Math.min(65535, Math.max(0, color[2] * 257))
+        ] as [number, number, number]
+      }));
+      
+      // Send RGB data using DTLS streaming
+      this.streamingClient.sendUpdate(colorUpdates);
       
     } catch (error) {
       console.warn('🌉 Hue: Streaming command failed:', error);
+    }
+  }
+
+  private async sendRestEntertainmentCommands(commands: LightCommand[]): Promise<void> {
+    if (!this.api) return;
+
+    try {
+      // Use Entertainment group set state for better performance than individual light calls
+      // This is much faster than individual light updates when Entertainment streaming is active
+      
+      if (this.config.entertainmentGroupId && commands.length > 1) {
+        // Try to use group command for multiple lights (more efficient)
+        const firstCommand = commands[0];
+        if (firstCommand && commands.every(cmd => 
+          cmd.state.color.r === firstCommand.state.color.r &&
+          cmd.state.color.g === firstCommand.state.color.g &&
+          cmd.state.color.b === firstCommand.state.color.b &&
+          cmd.state.intensity.value === firstCommand.state.intensity.value
+        )) {
+          // All commands are identical, use group command
+          await this.sendGroupRestCommand(firstCommand);
+          return;
+        }
+      }
+      
+      // Fall back to individual light commands if group command isn't applicable
+      await this.sendRestCommands(commands);
+      
+    } catch (error) {
+      console.warn('🌉 Hue: Entertainment REST commands failed:', error);
+      // Final fallback to individual commands
+      await this.sendRestCommands(commands);
+    }
+  }
+
+  private async sendGroupRestCommand(command: LightCommand): Promise<void> {
+    if (!this.api || !this.config.entertainmentGroupId) return;
+
+    try {
+      if (!hueApi) {
+        hueApi = await import('node-hue-api');
+      }
+      
+      const groupState = new hueApi.v3.lightStates.GroupLightState();
+      
+      if (command.state.intensity.value === 0) {
+        groupState.off();
+      } else {
+        // Group brightness expects percentage (0-100), not 0-254
+        const brightnessPercent = Math.max(1, Math.round((command.state.intensity.value / 254) * 100));
+        groupState
+          .on()
+          .brightness(brightnessPercent);
+        
+        // Use xy color space for groups (more reliable than rgb)
+        const [x, y] = this.rgbToXy(command.state.color.r, command.state.color.g, command.state.color.b);
+        groupState.xy(x, y);
+      }
+      
+      await this.api.groups.setGroupState(this.config.entertainmentGroupId, groupState);
+      
+    } catch (error) {
+      console.warn('🌉 Hue: Group REST command failed:', error);
+      throw error;
     }
   }
 
@@ -286,8 +418,8 @@ export class HueLightController extends LightController {
           // Turn light off for zero intensity
           lightState.off();
         } else {
-          // Convert 0-1 intensity to 1-254 brightness range (1 is minimum visible brightness)
-          const brightness = Math.max(1, Math.round(command.state.intensity.value * 254));
+          // Use intensity directly (already 0-254 range)
+          const brightness = Math.max(1, Math.round(command.state.intensity.value));
           lightState
             .on()
             .rgb(
@@ -416,15 +548,37 @@ export class HueLightController extends LightController {
 
   // Public methods for entertainment streaming control
   async stopEntertainmentStream(): Promise<void> {
-    if (this.streamingClient) {
-      try {
-        this.streamingClient.disconnect();
+    try {
+      // Close DTLS streaming client if active
+      if (this.streamingClient) {
+        console.log('🌉 Hue: Closing DTLS streaming connection...');
+        await this.streamingClient.close();
         this.streamingClient = null;
-        this.streaming = false;
-        console.log('🌉 Hue: Entertainment streaming stopped');
-      } catch (error) {
-        console.warn('🌉 Hue: Error stopping entertainment stream:', error);
       }
+
+      // Disable Entertainment streaming mode on the bridge
+      const wasStreaming = this.streaming;
+      if (this.api && this.config.entertainmentGroupId && wasStreaming) {
+        console.log('🌉 Hue: Disabling Entertainment streaming on group...');
+        try {
+          // Set streaming to inactive on the Entertainment group
+          const group = await this.api.groups.getGroup(this.config.entertainmentGroupId);
+          if (group) {
+            await this.api.groups.setGroupState(this.config.entertainmentGroupId, {
+              stream: { active: false }
+            });
+            console.log('🌉 Hue: Entertainment streaming disabled on bridge');
+          }
+        } catch (error) {
+          console.warn('🌉 Hue: Failed to disable streaming on bridge:', error);
+        }
+      }
+
+      this.streaming = false;
+      this.streamingSetupAttempted = false; // Allow setup again if needed
+      console.log('🌉 Hue: Entertainment streaming stopped');
+    } catch (error) {
+      console.warn('🌉 Hue: Error stopping entertainment stream:', error);
     }
   }
 
@@ -432,8 +586,57 @@ export class HueLightController extends LightController {
     return this.streaming;
   }
 
+  async shutdown(): Promise<void> {
+    console.log('🌉 Hue: Shutting down controller...');
+    
+    try {
+      // Stop entertainment streaming if active
+      if (this.streaming) {
+        await this.stopEntertainmentStream();
+      }
+      
+      // Additional cleanup can be added here
+      this.connected = false;
+      console.log('🌉 Hue: Controller shutdown complete');
+    } catch (error) {
+      console.warn('🌉 Hue: Error during shutdown:', error);
+    }
+  }
+
   getLightOrder(): readonly number[] {
     return [...this.lightOrder];
+  }
+
+  private rgbToXy(r: number, g: number, b: number): [number, number] {
+    // Normalize RGB values to 0-1
+    const red = r / 255;
+    const green = g / 255;
+    const blue = b / 255;
+
+    // Apply gamma correction
+    const redCorrected = (red > 0.04045) ? Math.pow((red + 0.055) / 1.055, 2.4) : (red / 12.92);
+    const greenCorrected = (green > 0.04045) ? Math.pow((green + 0.055) / 1.055, 2.4) : (green / 12.92);
+    const blueCorrected = (blue > 0.04045) ? Math.pow((blue + 0.055) / 1.055, 2.4) : (blue / 12.92);
+
+    // Convert to XYZ color space
+    const X = redCorrected * 0.664511 + greenCorrected * 0.154324 + blueCorrected * 0.162028;
+    const Y = redCorrected * 0.283881 + greenCorrected * 0.668433 + blueCorrected * 0.047685;
+    const Z = redCorrected * 0.000088 + greenCorrected * 0.072310 + blueCorrected * 0.986039;
+
+    // Convert to xy chromaticity coordinates
+    const sum = X + Y + Z;
+    if (sum === 0) {
+      return [0.3127, 0.3290]; // Default white point
+    }
+
+    const x = X / sum;
+    const y = Y / sum;
+
+    // Clamp to Hue gamut
+    return [
+      Math.max(0, Math.min(1, x)),
+      Math.max(0, Math.min(1, y))
+    ];
   }
 }
 
