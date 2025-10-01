@@ -140,6 +140,8 @@ Desktop.ini
 # Project specific
 everything.txt
 config/local-config.yaml
+hue-setup-summary.json
+config/hue-setup-summary.json
 config/*-local.yaml
 *.backup
 *.tmp
