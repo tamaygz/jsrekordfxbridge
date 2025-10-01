@@ -561,14 +561,9 @@ export class HueLightController extends LightController {
       if (this.api && this.config.entertainmentGroupId && wasStreaming) {
         console.log('🌉 Hue: Disabling Entertainment streaming on group...');
         try {
-          // Set streaming to inactive on the Entertainment group
-          const group = await this.api.groups.getGroup(this.config.entertainmentGroupId);
-          if (group) {
-            await this.api.groups.setGroupState(this.config.entertainmentGroupId, {
-              stream: { active: false }
-            });
-            console.log('🌉 Hue: Entertainment streaming disabled on bridge');
-          }
+          // Use the proper disableStreaming method instead of setGroupState
+          await this.api.groups.disableStreaming(this.config.entertainmentGroupId);
+          console.log('🌉 Hue: Entertainment streaming disabled on bridge');
         } catch (error) {
           console.warn('🌉 Hue: Failed to disable streaming on bridge:', error);
         }
